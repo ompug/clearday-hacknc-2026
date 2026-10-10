@@ -1,4 +1,4 @@
-import type { ApiClient, RealtimeClient } from "./client";
+import type { ApiClient } from "./client";
 import {
   ApiError,
   type AccountsResponse,
@@ -51,12 +51,4 @@ export const httpApi: ApiClient = {
   getAccounts: () => request<AccountsResponse>("/api/accounts"),
   pay: (body: PaymentRequest) =>
     request<PaymentResult>("/api/payments", { method: "POST", body: JSON.stringify(body) }),
-};
-
-/**
- * Placeholder until socket.io-client is approved as a dependency. Subscriptions
- * succeed but never fire, so the UI falls back to the results of its own calls.
- */
-export const httpRealtime: RealtimeClient = {
-  on: () => () => undefined,
 };
