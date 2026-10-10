@@ -1,7 +1,10 @@
 """Live pop end to end: Maya and Jake in two browser sessions; Jake pops his Rent share and Maya's sky
 updates over Socket.IO without a reload. Screenshots land in logs/e2e/.
 
-Needs the API and web running against a seeded DB (re-run after scripts/reset_demo.py), e.g.:
+Needs the API and web running against a seeded DB. Before the browsers start, it runs
+scripts/reset_demo.py on the DB that api.config points at (set DATABASE_URL_LOCAL to the same DB as
+the API), so every run starts from the seeded state. --reset-db-only skips Nessie; --no-reset skips it.
+For example:
     uv run uvicorn api.main:app --reload --port 8000 2>&1 | tee logs/api.log
     (cd web && npm run dev 2>&1 | tee ../logs/web.log)
     uv run --with playwright python scripts/e2e_live_pop.py --web http://localhost:3000
@@ -14,13 +17,15 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import expect, sync_playwright
 
-OUT = Path(__file__).resolve().parent.parent / "logs" / "e2e"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "logs" / "e2e"
 LIVE_TIMEOUT_MS = 5000
 
 
@@ -43,8 +48,16 @@ def main() -> int:
     parser.add_argument("--web", default="http://localhost:3000")
     parser.add_argument("--headed", action="store_true")
     parser.add_argument("--chromium", help="path to a Chromium binary (else Playwright's own)")
+    reset = parser.add_mutually_exclusive_group()
+    reset.add_argument("--no-reset", action="store_true", help="don't reset the demo first")
+    reset.add_argument("--reset-db-only", action="store_true", help="reset our DB only (offline)")
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
+    if not args.no_reset:
+        cmd = [sys.executable, "-m", "scripts.reset_demo", *(["--db-only"] if args.reset_db_only else [])]
+        if subprocess.run(cmd, cwd=ROOT, check=False).returncode != 0:  # noqa: S603 (fixed argv)
+            print("Demo reset failed; not running the E2E.", file=sys.stderr)
+            return 1
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not args.headed, executable_path=args.chromium)

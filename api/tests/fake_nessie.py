@@ -1,6 +1,7 @@
 """An in-memory Nessie behind httpx.MockTransport, mimicking the live quirks in notes/nessie-api.md:
 POST returns objectCreated with ``_id``, transfers come back with ``id``, an empty transfer list is a
-404, amounts are truncated to whole dollars, and unknown routes are 403."""
+404, amounts are truncated to whole dollars, unknown routes are 403, PUT /bills/{id} updates a bill and
+DELETE of a transfer, deposit, bill or purchase returns 200 even for an unknown id."""
 
 from __future__ import annotations
 
@@ -46,6 +47,13 @@ class FakeNessie:
         path, method = request.url.path, request.method
         body = json.loads(request.content) if request.content else None
         m = re.fullmatch(r"/accounts/([^/]+)/(purchases|deposits|transfers|bills)", path)
+        if method == "PUT" and (mb := re.fullmatch(r"/bills/([^/]+)", path)):
+            self.children["bills"][mb.group(1)].update(body)
+            return httpx.Response(202, json={"code": 202, "message": "Accepted"})
+        if method == "DELETE" and (md := re.fullmatch(r"/(transfers|deposits|bills|purchase)/([^/]+)", path)):
+            store = self.children["purchases" if md.group(1) == "purchase" else md.group(1)]
+            store.pop(md.group(2), None)  # Nessie returns 200 even for an unknown id
+            return httpx.Response(200)
         if path == "/customers":
             return self._list_or_create(method, body, self.customers, {})
         if path == "/merchants":

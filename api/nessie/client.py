@@ -329,6 +329,14 @@ class NessieClient:
         }
         return _money_movement(self._create(f"/accounts/{account_id}/transfers", body))
 
+    def delete_transfer(self, transfer_id: str) -> None:
+        """DELETE /transfers/{id}. Nessie answers 200 even for an unknown id, so this is idempotent."""
+        self._request("DELETE", f"/transfers/{transfer_id}")
+
+    def delete_deposit(self, deposit_id: str) -> None:
+        """DELETE /deposits/{id}. Idempotent like delete_transfer."""
+        self._request("DELETE", f"/deposits/{deposit_id}")
+
     def list_bills(self, account_id: str) -> list[dict]:
         return [_bill(o) for o in self._get_list(f"/accounts/{account_id}/bills")]
 
