@@ -45,3 +45,6 @@ Thumbs.db
 .vscode/
 logs/
 .exec-probe.*
+
+# Claude Code local state
+.claude/
