@@ -20,13 +20,22 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: str = ""
     elevenlabs_model_id: str = ""
     session_secret: SecretStr = SecretStr("")
+    # True behind HTTPS (deploy); False for http://localhost.
+    session_cookie_secure: bool = False
+    # Persona-picker login under /api/dev. Turn off in production.
+    enable_dev_routes: bool = True
 
     # "local" uses DATABASE_URL_LOCAL (docker-compose TimescaleDB); "tiger" uses DATABASE_URL (Tiger Cloud).
     db_target: Literal["local", "tiger"] = "local"
     database_url: SecretStr = SecretStr("")
     database_url_local: SecretStr = SecretStr("postgresql://postgres:postgres@localhost:5432/clearday")
 
-    web_origins: list[str] = ["http://localhost:3000"]
+    web_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
 
     @property
     def dsn(self) -> str:

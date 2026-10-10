@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api.config import get_settings
 from api.db import connect_async
+from api.routes import reads, session
 
 log = logging.getLogger("clearday.api")
 
@@ -26,6 +27,9 @@ fastapi_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+fastapi_app.include_router(session.router)
+fastapi_app.include_router(reads.router)
 
 sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=settings.web_origins)
 

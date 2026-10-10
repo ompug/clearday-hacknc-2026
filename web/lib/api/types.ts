@@ -1,4 +1,7 @@
 /**
+ * The FastAPI backend is contract-tested against these types (api/tests/test_api_contract.py
+ * mirrors their keys and value types by hand); change both together.
+ *
  * Wire types for the Clearday backend (FastAPI), mirroring docs/02-technical-spec.md.
  *
  * Conventions shared with the backend and analytics modules:
