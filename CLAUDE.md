@@ -23,8 +23,8 @@ Where docs disagree with each other, the Technical Spec's Analytics contracts wi
 
 - `analytics/splits.py` is real, Claude-owned and tested (it is the ledger's math). The other 8 modules stay stubs.
 - **Pop-to-pay:** the seed creates shared rent, electric and internet (Maya pays the landlord; Jake and Priya owe shares). Popping a shared bubble = Nessie transfer to Maya + ledger payment and allocation. Popping a personal bill marks the Nessie bill completed.
-- **Hosting:** API on Railway, web on Vercel (.tech domain).
-- **Approved deps:** pandas, numpy, Recharts, Vercel and Railway CLIs; device: `python-socketio[client]`, evdev, and pywizlight or python-kasa (bulb brand TBD; ask).
+- **Hosting:** local only (user decision, Oct 10). No Vercel, Railway or .tech domain; the demo runs the API, web and DB on the laptop. Phase 1 step 8 (deploy skeleton) is cut.
+- **Approved deps:** pandas, numpy, Recharts; device: `python-socketio[client]`, evdev, and pywizlight or python-kasa (bulb brand TBD; ask).
 - **Nessie cents fallback:** if Nessie rejects cents, the ledger stays exact; Nessie gets a rounded mirror and the difference is stored on the payment row. The seed prefers whole-dollar shares.
 - **Dev tooling:** pytest + ruff (Python), ESLint + Prettier (web), `scripts/check_money.sh` money lint in the pre-commit hook.
 
