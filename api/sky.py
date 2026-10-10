@@ -3,7 +3,11 @@ money-weather forecast, and the household-only status the app and Clearday Home 
 
 Bubbles are a view over the ledger. Balances come only from `api.balances`. The forecast is the
 analytics contract (`analytics.forecast.forecast`); this module only assembles its inputs and maps
-its per-bill output back to bubbles by (label, date).
+its per-bill output back to bubbles by (label, date). Necessity comes from `categorize.tag_needs`
+and subscription bubbles from `detection.detect_recurring`, both through their contract signatures.
+
+Payees, nicknames and merchant names are untrusted text: they are cleaned for display only and
+never select code paths.
 """
 
 from __future__ import annotations
@@ -11,13 +15,15 @@ from __future__ import annotations
 import datetime as dt
 import threading
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from analytics.categorize import detect_income
+from analytics.categorize import detect_income, tag_needs
+from analytics.detection import detect_recurring
 from analytics.forecast import forecast
 from api import ids
 from api.balances import account_balances_cents
@@ -44,6 +50,14 @@ TXN_COLUMNS = [
     "merchant",
     "status",
 ]
+# Nessie files every bill under "bills", which isn't a contract category; tag_needs sees a recurring
+# household obligation instead.
+NESSIE_BILL_CATEGORY = "bills"
+CONTRACT_BILL_CATEGORY = "utilities"
+SUBSCRIPTION_CATEGORY = "subscriptions"
+SUBSCRIPTIONS_CLUSTER_ID = "cluster_subscriptions"
+SUBSCRIPTIONS_CLUSTER_LABEL = "Subscriptions"
+MIN_CLUSTER = 2
 SCHEDULED_COLUMNS = ["user_id", "account_id", "date", "amount_cents", "kind", "label", "cadence"]
 
 
@@ -110,13 +124,42 @@ def open_household_shares(conn, household_id: int) -> list[ShareRow]:
     return [ShareRow(*r) for r in conn.execute(SHARED_SQL, (household_id,)).fetchall()]
 
 
+# The bill's nickname ("Phone") lives on the cached Nessie bill, not on the payee ("Carolina Wireless").
 PERSONAL_BILLS_SQL = """
-SELECT t.id, t.merchant, t.occurred_at::date, t.amount_cents
+SELECT t.id, nb.nickname, t.occurred_at::date, t.amount_cents, COALESCE(t.category, 'other')
 FROM transactions t
+LEFT JOIN LATERAL (
+    SELECT b ->> 'nickname' AS nickname
+    FROM nessie_cache c,
+         jsonb_array_elements(CASE WHEN jsonb_typeof(c.response_body) = 'array'
+                                   THEN c.response_body ELSE '[]'::jsonb END) b
+    WHERE c.method = 'GET' AND c.path LIKE '/accounts/%%/bills' AND b ->> '_id' = t.nessie_id
+    ORDER BY c.fetched_at DESC
+    LIMIT 1
+) nb ON TRUE
 WHERE t.user_id = %s AND t.kind = 'bill' AND t.status = 'pending'
   AND NOT EXISTS (SELECT 1 FROM expenses e WHERE e.source_txn_id = t.id)
 ORDER BY t.occurred_at, t.id
 """
+
+
+@dataclass(frozen=True)
+class PersonalBill:
+    txn_id: int
+    nickname: str | None
+    due_on: dt.date
+    amount_cents: int
+    category: str
+
+    @property
+    def label(self) -> str:
+        return display_text(self.nickname, "Bill")
+
+
+def personal_bills(conn, user_id: int) -> list[PersonalBill]:
+    """Pending bills that aren't household expenses, labelled by their nickname, never the payee."""
+    return [PersonalBill(*r) for r in conn.execute(PERSONAL_BILLS_SQL, (user_id,)).fetchall()]
+
 
 ACCOUNTS_SQL = """
 SELECT id, type, nickname, last4 FROM accounts WHERE user_id = %s
@@ -174,8 +217,11 @@ def invalidate_forecasts() -> None:
         _cache.clear()
 
 
-def _label(text: str | None) -> str:
-    return (text or "Bill").strip()[:LABEL_MAX] or "Bill"
+def display_text(text: str | None, fallback: str) -> str:
+    """Untrusted text made safe to show as a label: no control or format characters, single spaces,
+    at most LABEL_MAX characters. The web renders it as text only."""
+    cleaned = "".join(" " if unicodedata.category(ch)[0] in "CZ" else ch for ch in str(text or ""))
+    return " ".join(cleaned.split())[:LABEL_MAX].strip() or fallback
 
 
 def _income_schedule(checking_deposits: pd.DataFrame, start: dt.date, end: dt.date) -> list[dict]:
@@ -219,8 +265,8 @@ def _compute_forecast(conn, user_id: int, household_id: int, start: dt.date) -> 
         scheduled.append({"date": day.isoformat(), "amount_cents": cents, "kind": "bill", "label": label})
         bubble_by_bill[(label, day.isoformat())] = bubble_id
 
-    for txn_id, merchant, due, cents in conn.execute(PERSONAL_BILLS_SQL, (user_id,)).fetchall():
-        add_bill(_label(merchant), due, cents, ids.encode(ids.BILL, txn_id))
+    for b in personal_bills(conn, user_id):
+        add_bill(b.label, b.due_on, b.amount_cents, ids.encode(ids.BILL, b.txn_id))
     for s in open_household_shares(conn, household_id):
         bubble_id = ids.encode(ids.EXPENSE, s.expense_id)
         if s.payer_id == user_id and s.source_txn_id is not None:
@@ -259,18 +305,85 @@ def user_forecast(conn, user_id: int, household_id: int, start: dt.date) -> User
 # ---- responses ---------------------------------------------------------------------------------
 
 
+PURCHASES_SQL = """
+SELECT t.id, t.user_id, t.account_id, to_char(t.occurred_at, 'YYYY-MM-DD'), t.amount_cents, t.kind,
+       COALESCE(t.category, 'other'), t.merchant, t.status
+FROM transactions t
+WHERE t.user_id = %s AND t.kind = 'purchase' AND t.occurred_at::date <= %s
+  AND t.merchant IS NOT NULL AND t.merchant <> ''
+ORDER BY t.occurred_at, t.id
+"""
+
+
+@dataclass(frozen=True)
+class Subscription:
+    bubble_id: str
+    label: str
+    due_on: dt.date
+    amount_cents: int
+    account_id: int
+
+
+def upcoming_subscriptions(conn, user_id: int, start: dt.date) -> list[Subscription]:
+    """Recurring charges (detection.detect_recurring) in the subscriptions category, due within the
+    horizon. A merchant name is only ever a key into the user's own rows here."""
+    end = start + dt.timedelta(days=HORIZON_DAYS - 1)
+    rows = conn.execute(PURCHASES_SQL, (user_id, start)).fetchall()
+    latest: dict[str, tuple] = {}
+    for row in rows:
+        latest[str(row[7])] = row  # ordered by time, so the last write is the latest charge
+    subs = []
+    for rec in detect_recurring(pd.DataFrame(rows, columns=TXN_COLUMNS)):
+        last = latest.get(str(rec.get("merchant")))
+        nxt, cents = rec.get("next_expected_date"), int(rec.get("amount_cents") or 0)
+        if last is None or last[6] != SUBSCRIPTION_CATEGORY or not nxt or cents <= 0:
+            continue
+        due = dt.date.fromisoformat(str(nxt)[:10])
+        step = CADENCE_DAYS.get(str(rec.get("cadence")))
+        while step and due < start:
+            due += dt.timedelta(days=step)
+        if start <= due <= end:
+            label = display_text(last[7], "Subscription")
+            subs.append(Subscription(ids.encode(ids.SUBSCRIPTION, last[0]), label, due, cents, last[2]))
+    return subs
+
+
+def _necessities(categories: list[str]) -> list[str]:
+    """categorize.tag_needs over one row per bubble; unknown output reads as a need."""
+    if not categories:
+        return []
+    rows = [
+        {"transaction_id": str(i), "category": CONTRACT_BILL_CATEGORY if c == NESSIE_BILL_CATEGORY else c}
+        for i, c in enumerate(categories)
+    ]
+    tagged = tag_needs(pd.DataFrame(rows, columns=TXN_COLUMNS))
+    return [n if n in ("need", "want") else "need" for n in tagged["necessity"].tolist()]
+
+
 def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
     start = today()
     fc = user_forecast(conn, user.user_id, user.household_id, start)
     checking_id, _ = _checking(conn, user.user_id)
     default_account = ids.encode(ids.ACCOUNT, checking_id) if checking_id is not None else None
     bubbles: list[dict[str, Any]] = []
+    categories: list[str] = []
 
-    for s in open_household_shares(conn, user.household_id):
-        if s.user_id != user.user_id:
-            continue
+    shares = [s for s in open_household_shares(conn, user.household_id) if s.user_id == user.user_id]
+    source_ids = [s.source_txn_id for s in shares if s.source_txn_id is not None]
+    source_category: dict[int, str] = (
+        dict(
+            conn.execute(
+                "SELECT id, COALESCE(category, 'other') FROM transactions WHERE id = ANY(%s)", (source_ids,)
+            ).fetchall()
+        )
+        if source_ids
+        else {}
+    )
+
+    for s in shares:
         bubble_id = ids.encode(ids.EXPENSE, s.expense_id)
         p = 0.0 if s.status == "paid" else fc.p_short(bubble_id)
+        categories.append(source_category.get(s.source_txn_id, "other"))
         bubbles.append(
             {
                 "bubble_id": bubble_id,
@@ -285,7 +398,6 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
                 "participant_count": s.participants,
                 "p_short": p,
                 "weather": weather_for(p),
-                "necessity": "need",  # shared household bills (rent, utilities)
                 "expense_id": bubble_id,
                 "share_id": ids.encode(ids.SHARE, s.share_id),
                 "default_account_id": default_account,
@@ -293,37 +405,61 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
             }
         )
 
-    for txn_id, merchant, due, cents in conn.execute(PERSONAL_BILLS_SQL, (user.user_id,)).fetchall():
-        bubble_id = ids.encode(ids.BILL, txn_id)
+    def solo(bubble_id: str, label: str, due: dt.date, cents: int, account: str | None) -> dict[str, Any]:
         p = fc.p_short(bubble_id)
+        return {
+            "bubble_id": bubble_id,
+            "kind": "bill",
+            "label": label,
+            "due_date": due.isoformat(),
+            "your_share_cents": cents,
+            "total_cents": cents,
+            "status": "open",
+            "fill_fraction": 0.0,
+            "paid_count": 0,
+            "participant_count": 1,
+            "p_short": p,
+            "weather": weather_for(p),
+            "expense_id": None,
+            "share_id": None,
+            "default_account_id": account,
+            "cluster_id": None,
+        }
+
+    for b in personal_bills(conn, user.user_id):
+        categories.append(b.category)
         bubbles.append(
-            {
-                "bubble_id": bubble_id,
-                "kind": "bill",
-                "label": _label(merchant),
-                "due_date": due.isoformat(),
-                "your_share_cents": cents,
-                "total_cents": cents,
-                "status": "open",
-                "fill_fraction": 0.0,
-                "paid_count": 0,
-                "participant_count": 1,
-                "p_short": p,
-                "weather": weather_for(p),
-                "necessity": "need",  # Nessie bills are recurring obligations
-                "expense_id": None,
-                "share_id": None,
-                "default_account_id": default_account,
-                "cluster_id": None,
-            }
+            solo(ids.encode(ids.BILL, b.txn_id), b.label, b.due_on, b.amount_cents, default_account)
         )
 
+    subs = upcoming_subscriptions(conn, user.user_id, start)
+    in_cluster = len(subs) >= MIN_CLUSTER
+    for sub in subs:
+        categories.append(SUBSCRIPTION_CATEGORY)
+        bubble = solo(
+            sub.bubble_id, sub.label, sub.due_on, sub.amount_cents, ids.encode(ids.ACCOUNT, sub.account_id)
+        )
+        bubble["cluster_id"] = SUBSCRIPTIONS_CLUSTER_ID if in_cluster else None
+        bubbles.append(bubble)
+
+    for bubble, necessity in zip(bubbles, _necessities(categories), strict=True):
+        bubble["necessity"] = necessity
     bubbles.sort(key=lambda b: (b["due_date"], b["bubble_id"]))
+    clusters = []
+    if in_cluster:
+        members = [b["bubble_id"] for b in bubbles if b["cluster_id"] == SUBSCRIPTIONS_CLUSTER_ID]
+        clusters.append(
+            {
+                "cluster_id": SUBSCRIPTIONS_CLUSTER_ID,
+                "label": SUBSCRIPTIONS_CLUSTER_LABEL,
+                "bubble_ids": members,
+            }
+        )
     horizon_end = start + dt.timedelta(days=HORIZON_DAYS - 1)
     return {
         "as_of": dt.datetime.now(dt.UTC).isoformat().replace("+00:00", "Z"),
         "bubbles": bubbles,
-        "clusters": [],
+        "clusters": clusters,
         "safe_to_spend_cents": int(fc.result.get("safe_to_spend_cents") or 0),
         "next_payday": fc.result.get("next_payday") or horizon_end.isoformat(),
     }

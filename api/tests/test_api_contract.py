@@ -5,6 +5,7 @@ number appears in any response."""
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
 
 import pytest
@@ -351,3 +352,124 @@ def test_no_nessie_ids_or_account_numbers_in_any_response(client):
         assert "nessie" not in text.lower()
         assert "account_number" not in text
         assert not re.search(r"\d{9,}", text), "long digit run looks like an account number"
+
+
+# ---- sky: labels, subscription clusters, necessity ---------------------------------------------
+
+
+def _cache_bill(dsn: str, nickname: str) -> None:
+    """A cached Nessie bill list holding the fixture's personal bill, as the client stores it."""
+    body = [{"_id": NESSIE["txn"][2], "payee": "Phone Co", "nickname": nickname, "status": "pending"}]
+    with connect(dsn) as conn:
+        conn.execute(
+            """INSERT INTO nessie_cache (cache_key, method, path, status_code, response_body)
+               VALUES (%s, 'GET', %s, 200, %s::jsonb)""",
+            ("a" * 64, f"/accounts/{NESSIE['acct'][0]}/bills", json.dumps(body)),
+        )
+        conn.commit()
+
+
+def _bill_bubble(client) -> dict:
+    return next(b for b in client.get("/api/sky").json()["bubbles"] if b["bubble_id"].startswith("bill_"))
+
+
+def test_sky_personal_bill_uses_nickname_not_payee(client, scratch_dsn):
+    login(client)
+    assert _bill_bubble(client)["label"] == "Bill"  # no cached nickname: generic, never the payee
+    _cache_bill(scratch_dsn, "Phone")
+    sky.invalidate_forecasts()
+    bill = _bill_bubble(client)
+    assert bill["label"] == "Phone"
+    assert "Phone Co" not in client.get("/api/sky").text
+
+
+def test_sky_labels_are_cleaned_untrusted_text(client, scratch_dsn):
+    _cache_bill(scratch_dsn, "  Ph‮one\n\t<b>x</b>" + "z" * 200)
+    login(client)
+    label = _bill_bubble(client)["label"]
+    assert label.startswith("Ph one <b>x</b>") and len(label) == sky.LABEL_MAX
+    assert sky.display_text("\x07​ \n", "Bill") == "Bill"
+
+
+def _add_card_charges(dsn: str, user_id: int, card: int, charges: list[tuple[str, str, int, int]]) -> None:
+    today = sky.today()
+    noon = dt.datetime(today.year, today.month, today.day, 12, tzinfo=dt.UTC)
+    with connect(dsn) as conn:
+        for merchant, category, cents, days_ago in charges:
+            conn.execute(
+                """INSERT INTO transactions (user_id, account_id, kind, amount_cents, merchant, category,
+                       status, occurred_at)
+                   VALUES (%s, %s, 'purchase', %s, %s, %s, 'posted', %s)""",
+                (user_id, card, cents, merchant, category, noon - dt.timedelta(days=days_ago)),
+            )
+        conn.commit()
+
+
+def test_sky_clusters_recurring_subscriptions(client, scratch_dsn):
+    ana, card = client.ids["users"][0], client.ids["card"]
+    _add_card_charges(
+        scratch_dsn,
+        ana,
+        card,
+        [
+            ("StreamCo", "subscriptions", 1500, 50),
+            ("StreamCo", "subscriptions", 1500, 20),  # next charge in 10 days
+            ("TuneCo", "subscriptions", 1200, 45),
+            ("TuneCo", "subscriptions", 1200, 15),  # next charge in 15 days
+            ("GymCo", "health", 4000, 40),
+            ("GymCo", "health", 4000, 10),  # recurring, but not a subscription
+        ],
+    )
+    login(client)
+    body = client.get("/api/sky").json()
+    assert len(body["clusters"]) == 1
+    cluster = body["clusters"][0]
+    assert_shape(cluster, SKY_CLUSTER, "SkyCluster")
+    assert cluster["label"] == "Subscriptions"
+    members = [b for b in body["bubbles"] if b["cluster_id"] == cluster["cluster_id"]]
+    assert sorted(b["bubble_id"] for b in members) == sorted(cluster["bubble_ids"])
+    by_label = {b["label"]: b for b in members}
+    assert set(by_label) == {"StreamCo", "TuneCo"}
+    today = sky.today()
+    assert by_label["StreamCo"]["due_date"] == (today + dt.timedelta(days=10)).isoformat()
+    for b in members:
+        assert_shape(b, SKY_BUBBLE, b["bubble_id"])
+        assert b["kind"] == "bill" and b["bubble_id"].startswith("sub_")
+        assert b["default_account_id"] == f"acct_{card}"
+        assert b["necessity"] == "want"
+    assert by_label["TuneCo"]["your_share_cents"] == 1200
+    assert all(b["label"] != "GymCo" for b in body["bubbles"])
+
+    client.cookies.clear()
+    login(client, 1)  # Ben's sky never shows Ana's subscriptions
+    assert client.get("/api/sky").json()["clusters"] == []
+
+
+def test_sky_single_subscription_is_not_clustered(client, scratch_dsn):
+    _add_card_charges(
+        scratch_dsn,
+        client.ids["users"][0],
+        client.ids["card"],
+        [("StreamCo", "subscriptions", 1500, 50), ("StreamCo", "subscriptions", 1500, 20)],
+    )
+    login(client)
+    body = client.get("/api/sky").json()
+    assert body["clusters"] == []
+    assert [b["cluster_id"] for b in body["bubbles"] if b["label"] == "StreamCo"] == [None]
+
+
+def test_sky_necessity_comes_from_tag_needs(client, monkeypatch):
+    login(client)
+    by_kind = {b["kind"]: b for b in client.get("/api/sky").json()["bubbles"]}
+    assert by_kind["bill"]["necessity"] == "need"  # a Nessie bill reads as a utility to the contract
+
+    seen = []
+
+    def fake_tag_needs(transactions):
+        seen.extend(transactions["category"].tolist())
+        return transactions.assign(necessity=["want"] * len(transactions))
+
+    monkeypatch.setattr(sky, "tag_needs", fake_tag_needs)
+    bubbles = client.get("/api/sky").json()["bubbles"]
+    assert {b["necessity"] for b in bubbles} == {"want"}
+    assert "utilities" in seen and "bills" not in seen
