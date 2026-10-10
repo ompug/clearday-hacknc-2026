@@ -1,0 +1,26 @@
+[project]
+name = "clearday-home"
+version = "0.1.0"
+description = "Clearday Home: Linux-side controller for the UNO Q globe (bulb, LED matrix, keypad, audio)"
+requires-python = ">=3.11"
+dependencies = [
+    "python-socketio[client]>=5.17.0",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+# Keypad support; Linux only, needs kernel headers to build. Install on the board with: uv sync --group keypad
+keypad = ["evdev>=1.9; sys_platform == 'linux'"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+extend = "../pyproject.toml"
+
+[tool.ruff.lint.isort]
+known-first-party = ["clearday_home", "tests"]
