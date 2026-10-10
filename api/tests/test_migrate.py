@@ -15,6 +15,8 @@ PHASE1_TABLES = {
     "payments",
     "allocations",
     "nessie_cache",
+    "devices",
+    "feed_events",
     "schema_migrations",
 }
 

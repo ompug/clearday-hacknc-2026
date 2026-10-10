@@ -13,7 +13,8 @@ from fastapi.responses import JSONResponse
 
 from api.config import get_settings
 from api.db import connect_async
-from api.routes import reads, session
+from api.realtime import sio
+from api.routes import payments, reads, session
 
 log = logging.getLogger("clearday.api")
 
@@ -30,8 +31,7 @@ fastapi_app.add_middleware(
 
 fastapi_app.include_router(session.router)
 fastapi_app.include_router(reads.router)
-
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=settings.web_origins)
+fastapi_app.include_router(payments.router)
 
 
 @fastapi_app.get("/api/health")

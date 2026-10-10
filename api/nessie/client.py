@@ -332,6 +332,10 @@ class NessieClient:
     def list_bills(self, account_id: str) -> list[dict]:
         return [_bill(o) for o in self._get_list(f"/accounts/{account_id}/bills")]
 
+    def set_bill_status(self, bill_id: str, status: str) -> None:
+        """PUT /bills/{id} {"status"}: "completed" is how a bill is marked paid (balances don't move)."""
+        self._request("PUT", f"/bills/{bill_id}", {"status": _choice(status, BILL_STATUSES, "status")})
+
     def create_bill(
         self,
         account_id: str,

@@ -70,6 +70,10 @@ def _rows_for_account(client: NessieClient, nessie_account_id: str, merchants: d
 
 def sync_accounts(conn, client: NessieClient) -> SyncStats:
     """Refresh every Nessie-backed account in our DB. Runs in one DB transaction."""
+    from api.payments import ledger_owned_nessie_ids, retry_mirrors  # noqa: PLC0415 (avoids an import cycle)
+
+    retry_mirrors(conn, client)  # before fetching, so new mirror records are recognised below
+    owned = ledger_owned_nessie_ids(conn)
     stats = SyncStats()
     merchants = {m["id"]: (m["name"], m["category"]) for m in client.list_merchants()}
     accounts = conn.execute(
@@ -83,6 +87,9 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
             seen = []
             for nessie_id, kind, cents, merchant, category, status, when in rows:
                 seen.append(nessie_id)
+                if nessie_id in owned:  # the ledger holds exact cents and status for these
+                    stats.unchanged += 1
+                    continue
                 moved = conn.execute(
                     "DELETE FROM transactions WHERE nessie_id = %s AND occurred_at <> %s", (nessie_id, when)
                 ).rowcount
