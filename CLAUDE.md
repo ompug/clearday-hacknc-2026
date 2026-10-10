@@ -78,9 +78,10 @@ WCAG AA contrast (check text on glass), every bubble state has an icon and a tex
 
 ## Commands
 
-- Python (uv, 3.12, root project): `uv sync`, `uv run pytest`, `uv run ruff check`.
-- Secret guard: `bash scripts/check_secrets.sh` (pre-commit hook in `.githooks/`; enable with `git config core.hooksPath .githooks`).
-- This checkout lives on an NTFS mount without exec bits, so locally `.venv` is a symlink to `~/.local/share/clearday/venv` and `core.hooksPath` points at `~/.local/share/clearday/githooks` (a copy of `.githooks/pre-commit`).
+- **Setup (run first, and again after editing `.githooks/` or `pyproject.toml`):** `bash scripts/bootstrap.sh`. It's idempotent: installs Python 3.12, runs `uv sync`, and wires the git hooks.
+- Python (uv, 3.12, root project): `uv run pytest`, `uv run ruff check`.
+- Secret guard: `bash scripts/check_secrets.sh` (pre-commit hook in `.githooks/`, wired by `bootstrap.sh`).
+- **Filesystems without exec bits (e.g. this NTFS mount):** `bootstrap.sh` detects this and keeps the venv at `~/.local/share/clearday/venv` (`.venv` is a symlink to it) and copies `.githooks/*` to `~/.local/share/clearday/githooks`, which `core.hooksPath` points at. On a normal filesystem it uses `.venv` and `.githooks` directly. Override the location with `CLEARDAY_LOCAL_DIR`.
 - Money lint: `bash scripts/check_money.sh` (runs in pre-commit after the secret guard; suppress a line with `# money-ok: <reason>`). After editing `.githooks/`, re-run `bash scripts/bootstrap.sh` to refresh the external hook copy.
 - Web (npm): _to be filled in._
 - **Logs:** dev servers write to `logs/api.log` and `logs/web.log` (e.g. `npm run dev 2>&1 | tee logs/web.log`). Read those logs for errors before asking the user.
