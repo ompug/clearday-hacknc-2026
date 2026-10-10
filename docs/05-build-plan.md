@@ -15,7 +15,7 @@ With two people, the CS student builds every piece of code with Claude Code, and
 2. **Forecast engine.** A standalone Python module, `forecast.py`, built in a notebook with pandas and NumPy against a CSV export of the seeded data. Contract: `forecast(transactions, scheduled_events, start_balance, horizon_days=30, n_paths=1000)` returns P10/P50/P90 balance per day, probability of falling below threshold before each bill, safe-to-spend, and top variance-driving categories as JSON.
 3. **Recurring-charge and anomaly detection.** `detect_recurring(transactions)` and `detect_anomalies(transactions)` using robust statistics (median and MAD rather than mean and standard deviation, so one big charge doesn't hide others).
 4. **Backtest.** Forecast the held-out 30 days; report band coverage (share of actual days inside P10 to P90) and median absolute error. One clean chart of forecast band vs. actual for the pitch.
-5. **Hardware run and assembly.** Buy the parts on the Clearday Home Hardware tab and assemble the dome while code is in progress.
+5. **Hardware run and assembly.** Buy the parts in [Clearday Home Hardware](04-clearday-home-hardware.md) and assemble the dome while code is in progress.
 6. **Pitch.** Owns the forecast and backtest answers in Q&A, and records and edits the demo video.
 
 The CS student calls these functions from the backend, so the stats major never needs to touch the web code. Agree on the JSON shapes in the first 30 minutes.
@@ -29,7 +29,7 @@ The CS student calls these functions from the backend, so the stats major never 
 - `future.py`: 10-year low, middle, and high projection ranges from median monthly surplus
 - Bench test of Gemma speed on the UNO Q, timed and written down, during the hardware build
 
-**Scope for a team of two:** Photon is cut; everything beyond the MVP follows the stretch order in the Proposal and the Cut lines below.
+**Scope for a team of two:** Photon is cut; everything beyond the MVP follows the stretch order in the [Proposal](01-proposal.md) and the Cut lines below.
 
 ## Phased checklist
 

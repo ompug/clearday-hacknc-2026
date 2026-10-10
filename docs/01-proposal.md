@@ -164,8 +164,8 @@ The biggest risk is scope: cut from the bottom of the stretch list, never from t
 
 ## Companion documents
 
-- Technical Spec: architecture, data model, Nessie integration, ledger rules, forecast engine, API
-- Security and Privacy: Gemini data-access rules, device rules, legal notes, help panel guardrails
-- Fizz Home Hardware: parts, device states, software layout, fallbacks
-- Build Plan: roles, phased checklist, cut lines
-- Demo and Submission: demo script, Q&A prep, submission checklist
+- [Technical Spec](02-technical-spec.md): architecture, data model, Nessie integration, ledger rules, forecast engine, API
+- [Security and Privacy](03-security-and-privacy.md): Gemini data-access rules, device rules, legal notes, help panel guardrails
+- [Clearday Home Hardware](04-clearday-home-hardware.md): parts, device states, software layout, fallbacks
+- [Build Plan](05-build-plan.md): roles, phased checklist, cut lines
+- [Demo and Submission](06-demo-and-submission.md): demo script, Q&A prep, submission checklist

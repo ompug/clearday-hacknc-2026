@@ -6,18 +6,27 @@ A social money app for roommates: bills are glossy Frutiger Aero bubbles, splits
 
 ## Source of truth: `docs/`
 
-Read the relevant doc before building a feature. If an instruction conflicts with these docs, ask the user.
+Read the relevant doc before building a feature. If an instruction conflicts with these docs, ask the user. Review checklist: `CODING_STANDARDS.md`; read it before writing or reviewing code.
 
 | Doc | Use it for |
 | --- | --- |
-| `docs/Proposal.md` | Product, MVP list, **stretch order** |
-| `docs/Technical Spec.md` | Tables, endpoints, Socket.IO events, ledger rules, forecast, design/a11y, **Analytics contracts** |
-| `docs/Security and Privacy.md` | Gemini tool contract, device rules, rules for new features |
-| `docs/Clearday Home Hardware.md` | Device states, bridge protocol, fallbacks |
-| `docs/Build Plan.md` | **Phased checklist** and **Cut lines** |
-| `docs/Demo and Submission.md` | Demo script, Q&A, submission checklist |
+| `docs/01-proposal.md` | Product, MVP list, **stretch order** |
+| `docs/02-technical-spec.md` | Tables, endpoints, Socket.IO events, ledger rules, forecast, design/a11y, **Analytics contracts** |
+| `docs/03-security-and-privacy.md` | Gemini tool contract, device rules, rules for new features |
+| `docs/04-clearday-home-hardware.md` | Device states, bridge protocol, fallbacks |
+| `docs/05-build-plan.md` | **Phased checklist** and **Cut lines** |
+| `docs/06-demo-and-submission.md` | Demo script, Q&A, submission checklist |
 
 Where docs disagree with each other, the Technical Spec's Analytics contracts win over the Build Plan's older `forecast(...)` signature, and the Build Plan's Phase 1 (three accounts per roommate) wins over the spec's "one checking account each".
+
+## Decisions (Round 3)
+
+- `analytics/splits.py` is real, Claude-owned and tested (it is the ledger's math). The other 8 modules stay stubs.
+- **Pop-to-pay:** the seed creates shared rent, electric and internet (Maya pays the landlord; Jake and Priya owe shares). Popping a shared bubble = Nessie transfer to Maya + ledger payment and allocation. Popping a personal bill marks the Nessie bill completed.
+- **Hosting:** API on Railway, web on Vercel (.tech domain).
+- **Approved deps:** pandas, numpy, Recharts, Vercel and Railway CLIs; device: `python-socketio[client]`, evdev, and pywizlight or python-kasa (bulb brand TBD; ask).
+- **Nessie cents fallback:** if Nessie rejects cents, the ledger stays exact; Nessie gets a rounded mirror and the difference is stored on the payment row. The seed prefers whole-dollar shares.
+- **Dev tooling:** pytest + ruff (Python), ESLint + Prettier (web), `scripts/check_money.sh` money lint in the pre-commit hook.
 
 ## Repo layout
 
@@ -32,7 +41,7 @@ docs/       Plan (source of truth)
 
 ## Build order
 
-- Build each phase in `docs/Build Plan.md` end to end before starting the next. Don't start a stretch item until the Phase 2 checklist is done.
+- Build each phase in `docs/05-build-plan.md` end to end before starting the next. Don't start a stretch item until the Phase 2 checklist is done.
 - Build stretch items in the Proposal's stretch order. If behind, **cut in the Build Plan's Cut lines order**, which is not the reverse of the stretch list. Never cut the live shared bubble, the forecast, or the accessibility baseline.
 - Build only the tables and endpoints the current phase needs.
 - After each working milestone: run it, fix errors, then commit with a clear message.
@@ -57,7 +66,7 @@ WCAG AA contrast (check text on glass), every bubble state has an icon and a tex
 
 ## Analytics stubs
 
-`analytics/` modules (`synthetic_data, forecast, categorize, detection, splits, prices, cohorts, future, backtest`) must match the **exact** signatures and output shapes in the Technical Spec's "Analytics contracts". Stubs return realistic, deterministic fake data. The teammate's real modules replace them file for file; calling code never changes. Don't implement the teammate's algorithms.
+`analytics/` modules (`synthetic_data, forecast, categorize, detection, splits, prices, cohorts, future, backtest`) must match the **exact** signatures and output shapes in the Technical Spec's "Analytics contracts". Stubs return realistic, deterministic fake data. The teammate's real modules replace them file for file; calling code never changes. Don't implement the teammate's algorithms. Exception: `splits.py` is real (see Decisions).
 
 ## Nessie
 
@@ -72,4 +81,6 @@ WCAG AA contrast (check text on glass), every bubble state has an icon and a tex
 - Python (uv, 3.12, root project): `uv sync`, `uv run pytest`, `uv run ruff check`.
 - Secret guard: `bash scripts/check_secrets.sh` (pre-commit hook in `.githooks/`; enable with `git config core.hooksPath .githooks`).
 - This checkout lives on an NTFS mount without exec bits, so locally `.venv` is a symlink to `~/.local/share/clearday/venv` and `core.hooksPath` points at `~/.local/share/clearday/githooks` (a copy of `.githooks/pre-commit`).
+- Money lint: `bash scripts/check_money.sh` (runs in pre-commit after the secret guard; suppress a line with `# money-ok: <reason>`). After editing `.githooks/`, re-run `bash scripts/bootstrap.sh` to refresh the external hook copy.
 - Web (npm): _to be filled in._
+- **Logs:** dev servers write to `logs/api.log` and `logs/web.log` (e.g. `npm run dev 2>&1 | tee logs/web.log`). Read those logs for errors before asking the user.

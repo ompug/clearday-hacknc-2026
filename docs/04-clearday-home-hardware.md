@@ -14,7 +14,7 @@ The design swaps hobby LEDs for a Wi-Fi color smart bulb, which the UNO Q contro
 | FR4 | One key press plays the ElevenLabs household briefing | Should |
 | FR5 | Spoken announcement when a bill pops | Should |
 | FR6 | Shows an Offline state when the backend is unreachable | Should |
-| NFR1 | Speaks household-level information only (Security and Privacy tab) | Must |
+| NFR1 | Speaks household-level information only ([Security and Privacy](03-security-and-privacy.md)) | Must |
 | NFR2 | No modification of mains wiring; only pre-wired, store-bought lamp parts | Must |
 | NFR3 | Board kept outside the globe for airflow | Must |
 | NFR4 | Assembles in under 1 hour with no tools beyond scissors and tape | Should |
@@ -104,7 +104,7 @@ to MCU,matrix offline,matrix:dash
 Gemma runs on the UNO Q's Linux side only after the lights and celebration work; if the 30-minute benchmark below fails, ship templates instead and mention the design in Q&A.
 
 1. **Benchmark first (30 minutes max).** Build llama.cpp on the board, download Gemma 3 270M as a 4-bit GGUF, and time a 60-word briefing. Keep it if a briefing finishes in under about 20 seconds and memory stays below about 1.2 GB; try Gemma 3 1B only if 270M is fast and its text is weak.
-2. **Narrator.** When the household summary changes, fetch `/api/device/summary`, have Gemma write a 2 to 3 sentence briefing, validate it against the summary (Security and Privacy tab), send the text to the backend for ElevenLabs audio, and cache the result. Pressing Briefing plays the cached audio instantly.
+2. **Narrator.** When the household summary changes, fetch `/api/device/summary`, have Gemma write a 2 to 3 sentence briefing, validate it against the summary ([Security and Privacy](03-security-and-privacy.md)), send the text to the backend for ElevenLabs audio, and cache the result. Pressing Briefing plays the cached audio instantly.
 3. **Privacy guard (last stretch).** Record a short clip on long-press, transcribe it with whisper.cpp tiny on the device, and have Gemma label it household or personal. Only household questions go to the backend.
 4. **Template fallback, always present.** "Rent is 2 of 3 paid and due Friday. Skies look clear this week." Used whenever the model is slow, fails, or its output fails validation.
 

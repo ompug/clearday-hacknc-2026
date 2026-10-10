@@ -1,2 +1,5 @@
 #!/usr/bin/env bash
-exec bash "$(git rev-parse --show-toplevel)/scripts/check_secrets.sh"
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+bash "$root/scripts/check_secrets.sh"
+bash "$root/scripts/check_money.sh"
