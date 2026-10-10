@@ -1,0 +1,45 @@
+"""ASGI entry point: FastAPI for HTTP, python-socketio mounted alongside on /socket.io.
+
+Run with: uv run uvicorn api.main:app --port 8000
+"""
+
+import logging
+
+import psycopg
+import socketio
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from api.config import get_settings
+from api.db import connect_async
+
+log = logging.getLogger("clearday.api")
+
+settings = get_settings()
+
+fastapi_app = FastAPI(title="Clearday API", docs_url="/api/docs", openapi_url="/api/openapi.json")
+fastapi_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.web_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=settings.web_origins)
+
+
+@fastapi_app.get("/api/health")
+async def health() -> JSONResponse:
+    try:
+        async with await connect_async() as conn:
+            await conn.execute("SELECT 1")
+    except (psycopg.Error, OSError) as exc:
+        # Class name only: driver messages can include the host or user.
+        log.warning("health: database unreachable (%s)", type(exc).__name__)
+        return JSONResponse({"status": "degraded", "db": "unreachable"}, status_code=503)
+    return JSONResponse({"status": "ok", "db": "ok"})
+
+
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)

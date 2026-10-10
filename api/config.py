@@ -1,0 +1,39 @@
+"""Settings loaded from api/.env (gitignored). Secrets are SecretStr so they never print or log."""
+
+from functools import lru_cache
+from pathlib import Path
+from typing import Literal
+
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV_FILE = Path(__file__).resolve().parent / ".env"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore")
+
+    nessie_api_key: SecretStr = SecretStr("")
+    nessie_base_url: str = "https://prod-api.nessieisreal.com"
+    gemini_api_key: SecretStr = SecretStr("")
+    elevenlabs_api_key: SecretStr = SecretStr("")
+    elevenlabs_voice_id: str = ""
+    elevenlabs_model_id: str = ""
+    session_secret: SecretStr = SecretStr("")
+
+    # "local" uses DATABASE_URL_LOCAL (docker-compose TimescaleDB); "tiger" uses DATABASE_URL (Tiger Cloud).
+    db_target: Literal["local", "tiger"] = "local"
+    database_url: SecretStr = SecretStr("")
+    database_url_local: SecretStr = SecretStr("postgresql://postgres:postgres@localhost:5432/clearday")
+
+    web_origins: list[str] = ["http://localhost:3000"]
+
+    @property
+    def dsn(self) -> str:
+        url = self.database_url if self.db_target == "tiger" else self.database_url_local
+        return url.get_secret_value()
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

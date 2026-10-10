@@ -4,8 +4,14 @@ version = "0.1.0"
 description = "Clearday (HackNC 2026): social money app for roommates"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "fastapi>=0.143.0",
+    "httpx>=0.28.1",
     "numpy>=2.5.4",
     "pandas>=3.0.6",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.15.0",
+    "python-socketio>=5.17.0",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
@@ -16,7 +22,9 @@ package = false
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["analytics/tests"]
+testpaths = ["analytics/tests", "api/tests"]
+# starlette.testclient still uses httpx (approved); httpx2 is not an approved dep.
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]
 
 [tool.ruff]
 line-length = 110
