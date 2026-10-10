@@ -48,3 +48,8 @@ logs/
 
 # Claude Code local state
 .claude/
+
+# Credential files anywhere in the tree
+*.env
+*credentials*
+!api/.env.example
