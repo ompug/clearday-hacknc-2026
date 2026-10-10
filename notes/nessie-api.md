@@ -7,11 +7,11 @@ Probed 2026-10-10 against `https://prod-api.nessieisreal.com` with stdlib Python
 | Question | Answer |
 | --- | --- |
 | Non-integer purchase/transfer/deposit amounts (e.g. `12.34`)? | **Accepted with 201 and silently truncated** to an int (`12.34` → `12`, `12.99` → `12`, `100.75` → `100`). Same for account `balance` (`1000.55` → `1000`). A string `"12.34"` is rejected with 400 `value is not a valid integer`. Negative amounts (`-5`) are accepted. Bill `payment_amount` is a float and is stored as-is (`84.37`). |
-| Do transfers move balances? | **No.** Nothing moves `account.balance`: not transfers (pending or `completed`), purchases, deposits or completed bills. The balance stays at whatever was set when the account was created. `PUT /accounts/{id}` silently ignores `balance`. |
+| Do transfers move balances? | **No.** Nothing moves `account.balance`: not transfers (`pending` or `completed`, still unchanged after a 35 s re-GET), purchases, deposits or completed bills. The OpenAPI spec says nothing about async balance updates, and the docs page is a JS shell with no text to check. The balance stays at whatever was set when the account was created. `PUT /accounts/{id}` silently ignores `balance`. |
 | Does POST return the new id? | **Yes.** Every create returns `201 {"code":201,"message":"<X> created","objectCreated":{..., "_id": "<uuid>"}}`. You don't need to re-list. (This contradicts the "POST returns a string" note in `CLAUDE.md`.) |
 | Rate limit? | **None observed**: 60 sequential and 100 concurrent (20 threads) GETs all returned 200, with no rate headers. Usually 0.1 to 0.2 s per call; the first POST to a route after idle takes about 1.2 s (cold start). |
 | Merchant without geocode? | **Yes.** Only `name` is required. `category` must be a **string**, not an array (an array gives 400). |
-| Transfer payee? | **A transfer has no payee field.** `TransferCreate` rejects `payee_id`, `medium`, `payer_id`, `account_id` and others as "extra fields not permitted". A transfer shows up only under the account it was posted to. |
+| Transfer payee? | **A transfer has no payee field.** Re-tested with the classic body `{"medium":"balance","payee_id":"<second account>","amount":1,"description":"x"}`: it gets 400 `payee_id`/`medium` "extra fields not permitted", with or without `transaction_date` and `status`. `payer_id`, `account_id`, `payee` and similar are rejected too. A transfer shows up only under the account it was posted to. The payee's `/transfers` list stays 404. |
 
 ## Ids and errors
 

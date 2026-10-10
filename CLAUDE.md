@@ -71,9 +71,14 @@ WCAG AA contrast (check text on glass), every bubble state has an icon and a tex
 ## Nessie
 
 - Base URL `https://prod-api.nessieisreal.com`; key passed as the `?key=` query parameter. Docs: https://prod.nessieisreal.com/docs (OpenAPI at https://nessieisreal.com/nessie-openapi-spec.yaml).
-- The published spec is incomplete: purchase and transfer create/list routes aren't in it. Verify routes live before relying on them.
-- POST returns a string, not the created object, so re-list to find new IDs.
-- Purchase, deposit and transfer amounts and balances are integer dollars; bill `payment_amount` is a float. There's no bulk data delete.
+- The published spec is incomplete: purchase and transfer create/list routes aren't in it. Live-verified details are in `notes/nessie-api.md`.
+- POST returns `{"objectCreated": {..., "_id": ...}}`, so read the new ID from the response instead of re-listing.
+- Purchase, deposit and transfer amounts (and account balances) are integer dollars. Non-integers are **silently truncated** (12.34 becomes 12). Only bill `payment_amount` keeps cents. Keep true cents in our ledger.
+- Balances are static: nothing moves them. The backend derives balances from mirrored transactions.
+- Transfers have **no payee field** (`payee_id` and `medium` are rejected). Record the payee in our `payments` table and mirror the money arriving as a deposit on the payee's account.
+- If one record is missing a field the read schema needs, the whole list returns 400. The seed always sends every field: purchases need `purchase_date` and `status`, bills need `nickname`, `payment_date` and `recurring_date`.
+- The single-purchase route is `/purchase/{id}` (singular). Transfer GETs return `id` and everything else returns `_id`. Normalise this in the client.
+- There's no bulk delete and no DELETE for customers or merchants. Deleting an account doesn't cascade.
 - Cache every Nessie response in the database. The demo reads from the cache.
 
 ## Commands
