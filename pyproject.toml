@@ -39,3 +39,4 @@ ignore = ["S101"]
 "**/tests/**" = ["S"]
 # Seeded synthetic data, not cryptography.
 "analytics/**" = ["S311"]
+"scripts/seed_nessie.py" = ["S311"]
