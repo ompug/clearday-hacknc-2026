@@ -28,6 +28,15 @@ Where docs disagree with each other, the Technical Spec's Analytics contracts wi
 - **Nessie cents fallback:** if Nessie rejects cents, the ledger stays exact; Nessie gets a rounded mirror and the difference is stored on the payment row. The seed prefers whole-dollar shares.
 - **Dev tooling:** pytest + ruff (Python), ESLint + Prettier (web), `scripts/check_money.sh` money lint in the pre-commit hook.
 
+## Decisions (Round 4)
+
+- **Pop-to-pay mirror:** a payer-side Nessie transfer plus a matching payee-side deposit, both described "Clearday: <label> share". The payment row stores `nessie_transfer_id`, `nessie_deposit_id` and `nessie_rounding_diff_cents` (Nessie gets whole dollars). If the mirror fails, the ledger still commits; sync retries it and the row records mirror status.
+- **Balances** shown in the app come from our DB (opening balance plus stored transactions), never from Nessie.
+- **Accepted data contract changes:** bills stored as transactions; added columns `category`, `opening_balance_cents`, `label`, `due_on`; `users.nessie_account_id` dropped; transactions unique on `(nessie_id, occurred_at)`.
+- **Approved dep:** `socket.io-client` (web).
+- **`web/lib/api/types.ts`** is the contract for payloads the spec leaves undefined; API tests check against it.
+- **Socket.IO auth (Phase 1):** session cookie for browsers, device token for devices; other connections are rejected.
+
 ## Repo layout
 
 ```
