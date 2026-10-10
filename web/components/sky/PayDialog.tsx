@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ApiError, api, type Account, type PaymentResult, type SkyBubble } from "@/lib/api";
 import { bubbleState, canPay } from "@/lib/bubbles";
-import { dueDayName, dueLabel } from "@/lib/dates";
+import { daysBetween, dueDayName, dueLabel, todayIso } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { CloseIcon, PeopleIcon } from "../icons";
 import { StateBadge } from "../StateBadge";
@@ -99,7 +99,10 @@ export function PayDialog({
                 {bubble.label}
               </h2>
               <p className="mt-1 text-navy-800">
-                {dueLabel(bubble.due_date)} ({dueDayName(bubble.due_date)})
+                {dueLabel(bubble.due_date)}
+                {daysBetween(todayIso(), bubble.due_date) > 1
+                  ? ` (${dueDayName(bubble.due_date)})`
+                  : ""}
               </p>
             </div>
             <button

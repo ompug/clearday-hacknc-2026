@@ -6,7 +6,7 @@ import { ClearMark } from "./icons";
 
 export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => void }) {
   return (
-    <header className="glass-navy sticky top-0 z-30 rounded-b-[1.75rem]">
+    <header className="glass-navy relative z-30 md:sticky md:top-0 rounded-b-[1.75rem]">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
         <div className="flex items-center gap-3">
           <ClearMark className="size-10 shrink-0" />

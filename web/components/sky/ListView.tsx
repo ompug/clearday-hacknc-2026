@@ -15,9 +15,9 @@ function Row({ bubble, onOpen }: { bubble: SkyBubble; onOpen: (b: SkyBubble) => 
       type="button"
       onClick={() => onOpen(bubble)}
       data-bubble-id={bubble.bubble_id}
-      className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-white bg-white/80 px-4 py-3 text-left shadow-sm transition hover:bg-white hover:shadow-md"
+      className="flex w-full items-start justify-between gap-4 rounded-2xl border border-white bg-white/80 px-4 py-3 text-left shadow-sm transition hover:bg-white hover:shadow-md"
     >
-      <span className="min-w-0 flex-1 basis-48">
+      <span className="min-w-0 flex-1">
         <span className="block text-lg font-bold break-words text-navy-950">{bubble.label}</span>
         <span className="block text-navy-800">
           {dueLabel(bubble.due_date)}
@@ -29,7 +29,7 @@ function Row({ bubble, onOpen }: { bubble: SkyBubble; onOpen: (b: SkyBubble) => 
           ) : null}
         </span>
       </span>
-      <span className="text-right">
+      <span className="flex shrink-0 flex-col items-end gap-1 text-right">
         <span className="block text-lg font-bold text-navy-950 tabular-nums">
           {formatCents(bubble.your_share_cents)}
         </span>
@@ -38,8 +38,8 @@ function Row({ bubble, onOpen }: { bubble: SkyBubble; onOpen: (b: SkyBubble) => 
             your share of {formatCents(bubble.total_cents)}
           </span>
         ) : null}
+        <StateBadge state={state} />
       </span>
-      <StateBadge state={state} />
     </button>
   );
 }

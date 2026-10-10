@@ -19,7 +19,9 @@ import { StateBadge, StateIcon } from "../StateBadge";
 
 // Layout constants, in rem so they scale with the text-size control and zoom.
 const CELL_REM = 12;
-const ROW_REM = 13.5;
+const MIN_CELL_REM = 9.5;
+const PILL_REM = 3.25;
+const COLUMN_DROP = 0.3;
 const MIN_D_REM = 7.75;
 const MAX_D_REM = 10.5;
 const MEMBER_D_REM = 7.75;
@@ -108,7 +110,7 @@ function BubbleFace({
         />
       ) : null}
       <span
-        className="bubble-content flex h-full flex-col items-center justify-center px-[14%] text-center"
+        className="bubble-content flex h-full flex-col items-center justify-center px-[11%] text-center"
         style={{ fontSize: `${Math.min(1, d / 9)}rem` }}
       >
         <span aria-hidden="true" className={state === "tight" ? "text-alert-700" : "text-navy-800"}>
@@ -169,25 +171,24 @@ export function SkyView({
     return out;
   }, [entries, expanded]);
 
-  const cols = metrics
-    ? Math.max(1, Math.min(4, Math.floor(metrics.width / (CELL_REM * metrics.rem))))
-    : 1;
-  const rows = Math.ceil(placed.length / cols);
   const rem = metrics?.rem ?? 16;
   const width = metrics?.width ?? 0;
+  const cols = metrics ? Math.max(1, Math.min(4, Math.floor(width / (MIN_CELL_REM * rem)))) : 1;
+  const cellPx = width / cols;
+  // On narrow screens bubbles shrink a little so two columns still fit.
+  const scale = Math.min(1, cellPx / (CELL_REM * rem));
+  const rowRem = MAX_D_REM * scale + PILL_REM;
+  const rows = Math.ceil(placed.length / cols);
+  const heightRem = rows * rowRem + (cols > 1 ? rowRem * COLUMN_DROP : 0) + 1;
 
+  /** Row-major by due date, so sooner bills float higher; odd columns drop a little. */
   function position(index: number, item: Placed) {
     const row = Math.floor(index / cols);
     const col = index % cols;
-    const stagger = cols > 1 ? (row % 2 === 0 ? -0.22 : 0.22) : 0;
-    const cell = width / cols;
     const j = jitter(item.key);
-    const cx = Math.min(
-      width - (item.d * rem) / 2 - 4,
-      Math.max((item.d * rem) / 2 + 4, (col + 0.5 + stagger + j * 0.2) * cell),
-    );
-    const top = row * ROW_REM * rem + (MAX_D_REM - item.d) * 0.5 * rem + j * 1.2 * rem + rem;
-    return { left: cx - (item.d * rem) / 2, top };
+    const drop = col % 2 === 1 ? COLUMN_DROP * rowRem : 0;
+    const top = (row * rowRem + drop + (MAX_D_REM - item.d) * 0.5 * scale + j * 0.8 + 0.5) * rem;
+    return { left: col * cellPx, top, d: item.d * scale };
   }
 
   function toggleCluster(id: string) {
@@ -200,13 +201,13 @@ export function SkyView({
   }
 
   return (
-    <div ref={ref} className="relative w-full" style={{ height: `${rows * ROW_REM + 2}rem` }}>
+    <div ref={ref} className="relative w-full" style={{ height: `${heightRem}rem` }}>
       {metrics ? (
         <ol aria-label="Bill sky, soonest due at the top" className="absolute inset-0">
           <AnimatePresence>
             {placed.map((item, index) => {
-              const { left, top } = position(index, item);
-              const size = `${item.d}rem`;
+              const { left, top, d } = position(index, item);
+              const size = `${d}rem`;
               return (
                 <motion.li
                   key={item.key}
@@ -221,11 +222,11 @@ export function SkyView({
                   }}
                   transition={{ type: "spring", stiffness: 160, damping: 20 }}
                   className="absolute flex flex-col items-center"
-                  style={{ left, top, width: size }}
+                  style={{ left, top, width: cellPx }}
                 >
                   <Float index={index}>
                     {item.kind === "bubble" ? (
-                      <SkyBubbleButton bubble={item.bubble} d={item.d} onOpen={onOpen} />
+                      <SkyBubbleButton bubble={item.bubble} d={d} onOpen={onOpen} />
                     ) : (
                       <button
                         type="button"
@@ -238,7 +239,7 @@ export function SkyView({
                       >
                         <BubbleFace
                           state={item.summary.state}
-                          d={item.d}
+                          d={d}
                           fill={0}
                           label={item.summary.cluster.label}
                           amount={formatCents(item.summary.totalCents)}
@@ -251,7 +252,7 @@ export function SkyView({
                   <StateBadge
                     hidden
                     small
-                    className="mt-2 whitespace-nowrap"
+                    className="mt-2 max-w-[95%] justify-center text-center"
                     state={item.kind === "bubble" ? bubbleState(item.bubble) : item.summary.state}
                     extra={dueLabel(
                       item.kind === "bubble" ? item.bubble.due_date : item.summary.earliestDue,

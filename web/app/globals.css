@@ -29,6 +29,7 @@
 
 :root {
   color-scheme: light;
+  background-color: #8fd0f2;
   --focus-ring: #ffffff;
   --focus-halo: #0a2a4f;
 }
@@ -47,7 +48,6 @@ body {
     radial-gradient(ellipse 30rem 7rem at 88% 64%, rgb(255 255 255 / 0.28), transparent 70%),
     radial-gradient(ellipse 26rem 6rem at 55% 92%, rgb(255 255 255 / 0.4), transparent 70%),
     linear-gradient(180deg, #0a2a4f 0%, #134f88 34%, #2f8ccc 66%, #8fd0f2 100%);
-  background-attachment: fixed;
   font-family: var(--font-sans);
 }
 
