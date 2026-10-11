@@ -13,6 +13,7 @@ import type {
   CreateExpenseResult,
   DuplicateSubscriptionsResponse,
   DemoPersona,
+  FeedResponse,
   ForecastResponse,
   FutureRequest,
   FutureResponse,
@@ -60,6 +61,8 @@ export interface ApiClient {
   getAnalystSegments(): Promise<AnalystSegmentsResponse>;
   /** This week's two-host recap: lines, transcript and optional audio. */
   getRecap(): Promise<RecapResponse>;
+  /** The household's recent events: celebrations, no amounts. */
+  getFeed(): Promise<FeedResponse>;
   /** Private, opt-in help links; resources are empty unless a trigger fired. */
   getHelpPanel(): Promise<HelpPanelResponse>;
   /** Hypothetical 10-year range for a steady monthly amount, with adjustable return assumptions. */

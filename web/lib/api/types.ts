@@ -549,3 +549,18 @@ export interface HelpPanelResponse {
   disclaimer: string;
   private_note: string;
 }
+
+// ---------------------------------------------------------------------------
+// Private feed (GET /api/feed). Household members only; never carries amounts.
+// ---------------------------------------------------------------------------
+
+export interface FeedEvent {
+  type: "share_paid" | "bubble_popped" | "expense_created";
+  actor_display_name: string;
+  subject_label: string;
+  created_at: string;
+}
+
+export interface FeedResponse {
+  events: FeedEvent[];
+}

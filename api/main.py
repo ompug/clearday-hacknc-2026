@@ -19,6 +19,7 @@ from api.realtime import sio
 from api.routes import analyst as analyst_routes
 from api.routes import assistant as assistant_routes
 from api.routes import expenses, payments, reads, session
+from api.routes import feed as feed_routes
 from api.routes import forecast as forecast_routes
 from api.routes import future as future_routes
 from api.routes import help as help_routes
@@ -57,6 +58,7 @@ fastapi_app.include_router(analyst_routes.router)
 fastapi_app.include_router(recap_routes.router)
 fastapi_app.include_router(future_routes.router)
 fastapi_app.include_router(help_routes.router)
+fastapi_app.include_router(feed_routes.router)
 
 
 @fastapi_app.get("/api/health")

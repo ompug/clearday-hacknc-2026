@@ -14,6 +14,7 @@ import {
   type DuplicateSubscriptionsResponse,
   type CreateExpenseResult,
   type DemoPersona,
+  type FeedResponse,
   type ForecastResponse,
   type FutureResponse,
   type HelpPanelResponse,
@@ -95,6 +96,7 @@ export const httpApi: ApiClient = {
     return request<FutureResponse>(`/api/future${q.size ? `?${q}` : ""}`);
   },
   getHelpPanel: () => request<HelpPanelResponse>("/api/help"),
+  getFeed: () => request<FeedResponse>("/api/feed"),
   getRecap: () => request<RecapResponse>("/api/recap/latest"),
   getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),

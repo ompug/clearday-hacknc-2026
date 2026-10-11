@@ -417,6 +417,23 @@ export const mockApi: ApiClient = {
       disclaimer: "General information, not legal advice",
       private_note: "Only you can see this. Nothing is shared with anyone.",
     }),
+  getFeed: async () =>
+    delay({
+      events: [
+        {
+          type: "bubble_popped" as const,
+          actor_display_name: "Jake",
+          subject_label: "Rent",
+          created_at: "2026-10-10T18:00:00Z",
+        },
+        {
+          type: "expense_created" as const,
+          actor_display_name: "Maya",
+          subject_label: "Franklin Street Pizza",
+          created_at: "2026-10-10T16:30:00Z",
+        },
+      ],
+    }),
   getRecap: async () =>
     delay({
       week_start: "2026-10-04",
