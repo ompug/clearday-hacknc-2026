@@ -180,3 +180,48 @@ def test_sync_after_db_only_reset_keeps_the_seeded_state(seeded):
     conn.commit()
     assert stats.orphan_mirrors == 2
     assert snapshot(conn) == before_db
+
+
+def test_reset_deletes_expenses_the_seed_did_not_create(seeded):
+    """Every E2E run adds a "Pizza night" through POST /api/expenses; the reset removes it with its
+    shares, payments, allocations and feed events, even once a payment has frozen its amounts."""
+    from api import expenses  # noqa: PLC0415
+
+    conn = seeded["conn"]
+    before_db = snapshot(conn)
+    users = dict(conn.execute("SELECT display_name, id FROM users").fetchall())
+    conn.commit()
+    jake, maya = load_member(conn, users["Jake"]), load_member(conn, users["Maya"])
+    pizza = expenses.create_expense(
+        conn,
+        jake,
+        idempotency_key="reset-pizza-night-01",
+        label="Pizza night",
+        total_cents=1000,
+        split_method="even",
+        participants=[{"user_id": ids.encode(ids.USER, users[n])} for n in ("Maya", "Jake", "Priya")],
+    )
+    conn.commit()
+    pizza_id = pizza.expense_id
+    maya_share = conn.execute(
+        "SELECT amount_cents FROM shares WHERE expense_id = %s AND user_id = %s", (pizza_id, maya.user_id)
+    ).fetchone()[0]
+    account = conn.execute(
+        "SELECT id FROM accounts WHERE user_id = %s AND type = 'checking'", (maya.user_id,)
+    ).fetchone()[0]
+    payments.pop_bubble(
+        conn,
+        maya,
+        idempotency_key="reset-pizza-pay-0001",
+        bubble_id=ids.encode(ids.EXPENSE, pizza_id),
+        account_id=ids.encode(ids.ACCOUNT, account),
+        amount_cents=maya_share,
+    )
+    conn.commit()
+    assert snapshot(conn) != before_db
+
+    result = reset_demo.reset(conn, None, plan=seeded["plan"])
+    assert result.db["expenses deleted"] == 1
+    assert snapshot(conn) == before_db
+    again = reset_demo.reset(conn, None, plan=seeded["plan"])
+    assert not any(again.db.values())

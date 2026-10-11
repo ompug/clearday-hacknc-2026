@@ -6,7 +6,8 @@ Usage (from the repo root; the DB is the one api.config points at, e.g. DATABASE
     uv run python -m scripts.reset_demo --db-only   # offline: our DB only, Nessie untouched
 
 Our DB: deletes Clearday-created payments, their allocations (credits are allocations with no share),
-the ledger transactions pop-to-pay wrote, and the household feed; puts every share back to its seeded
+the ledger transactions pop-to-pay wrote, the household feed, and every expense the seed didn't create
+(app-created ones, e.g. an E2E "Pizza night", with their shares); puts every share back to its seeded
 status (the payer's own share paid, the rest open) and every seeded bill back to its seeded status.
 
 Nessie: only inside the seeded accounts of our 3 customers (zz-probe records and anything else are
@@ -197,6 +198,24 @@ def reset_db(conn, hh: Household, plan: Plan) -> Counter:
     counts["feed events deleted"] = conn.execute(
         "DELETE FROM feed_events WHERE household_id = %s", (hh.id,)
     ).rowcount
+    # Expenses the seed didn't create: app-created ones carry an idempotency key; seeded ones match the
+    # plan. Their payments and allocations are gone above, so the no-silent-edits trigger (UPDATE only)
+    # doesn't apply and nothing else references them.
+    seeded = [(e.label, e.total_cents, e.due_on) for e in plan.expenses]
+    extra = [
+        r[0]
+        for r in conn.execute(
+            "SELECT id, idempotency_key, label, total_cents, due_on FROM expenses WHERE household_id = %s",
+            (hh.id,),
+        ).fetchall()
+        if r[1] is not None or (r[2], r[3], r[4]) not in seeded
+    ]
+    conn.execute(
+        "DELETE FROM allocations WHERE share_id IN (SELECT id FROM shares WHERE expense_id = ANY(%s))",
+        (extra,),
+    )
+    conn.execute("DELETE FROM shares WHERE expense_id = ANY(%s)", (extra,))
+    counts["expenses deleted"] = conn.execute("DELETE FROM expenses WHERE id = ANY(%s)", (extra,)).rowcount
     counts["shares reset"] = conn.execute(
         """UPDATE shares s
            SET status = CASE WHEN s.user_id = e.payer_id THEN 'paid' ELSE 'open' END
