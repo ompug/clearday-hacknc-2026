@@ -251,3 +251,10 @@ def test_amounts_are_frozen_once_paid(client):
         conn.rollback()
         with pytest.raises(Exception, match="adjustment"):
             conn.execute("UPDATE expenses SET total_cents = 1 WHERE id = %s", (int(body["expense_id"][4:]),))
+
+
+def test_a_label_salted_with_an_amount_is_not_emitted_to_the_feed(client):
+    login(client, "Ana")
+    assert create(client, label="Pizza $36", total=3600).status_code == 200
+    feed = [e.payload for e in client.events if e.event == "feed.created"]
+    assert [p["subject_label"] for p in feed] == ["a bill"]

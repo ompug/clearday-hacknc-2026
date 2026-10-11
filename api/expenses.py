@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import psycopg
 
 from analytics.splits import split
-from api import ids, sky
+from api import feed, ids, sky
 from api.payments import FILL_PLACES, expense_progress
 from api.realtime import Emit, device_room, household_room
 from api.session import CurrentUser
@@ -232,7 +232,11 @@ def create_expense(
     events.append(
         Emit(
             "feed.created",
-            {"type": FEED_TYPE, "actor_display_name": user.display_name, "subject_label": clean_label},
+            {
+                "type": FEED_TYPE,
+                "actor_display_name": user.display_name,
+                "subject_label": feed.label(clean_label),
+            },
             (hh,),  # members only: the device room never gets names
         )
     )

@@ -20,8 +20,8 @@ Checkable rules for every change. Sources: `CLAUDE.md` and `docs/03-security-and
 
 ## Privacy
 
-6. **No amounts or names in the feed or on Clearday Home.** The device reads only `/api/device/summary` and `/api/household/status` and speaks household-level progress without names by default ("3 of 4 shares paid").
-   **Check:** feed and device payload schemas contain no amount or name fields; a test asserts the summary JSON has none.
+6. **No amounts in the feed or on Clearday Home; no names on Clearday Home.** The in-app roommate feed may show display names (members only, never sent to the device room). Feed labels are user-typed, so any that could carry an amount or a link fall back to "a bill" (`api.safe_text`). The device reads only `/api/device/summary` and `/api/household/status` and speaks household-level progress without names by default ("3 of 4 shares paid").
+   **Check:** feed and device payload schemas contain no amount fields; device payloads contain no name fields; a test asserts the summary JSON has none; a test feeds salted labels ("Pizza $36") and sees "a bill".
 7. **Accounts show nickname + last 4 only.** Nessie IDs and account numbers stay in the backend.
    **Check:** account response models expose `nickname` and `last4` only; grep API responses for `nessie_id`/`account_number`.
 8. **New-feature rules hold.** Receipt images deleted after extraction; analyst view uses synthetic households and hides segments under 20; Future view labeled "Hypothetical, not investment advice"; recap uses household data only.

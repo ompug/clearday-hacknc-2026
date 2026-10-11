@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 import httpx
 from psycopg.types.json import Jsonb
 
-from api import ids, ledger
+from api import feed, ids, ledger
 from api.nessie.client import NessieClient, NessieError
 from api.realtime import Emit, device_room, household_room, user_room
 from api.session import CurrentUser
@@ -191,12 +191,14 @@ def _pop_shared(
         ),  # fmt: skip
         Emit(
             "feed.created",
-            {"type": feed_type, "actor_display_name": user.display_name, "subject_label": label},
+            {"type": feed_type, "actor_display_name": user.display_name, "subject_label": feed.label(label)},
             (hh,),  # members only: the device room never gets names
         ),
     ]
     if popped:
-        events.insert(1, Emit("bubble.popped", {"expense_id": bubble_id, "label": label}, (hh, dev)))
+        events.insert(
+            1, Emit("bubble.popped", {"expense_id": bubble_id, "label": feed.label(label)}, (hh, dev))
+        )
     return PopOutcome(lp.payment_id, result, events=events)
 
 

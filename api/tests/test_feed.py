@@ -37,3 +37,20 @@ def test_feed_lists_own_household_newest_first_without_amounts(client, scratch_d
 def test_empty_feed(client):  # noqa: F811
     login(client)
     assert client.get("/api/feed").json() == {"events": []}
+
+
+SALTED = ["Pizza $36", "Rent 1200", "Pizza ３６", "thirty-six dollars", "Tacos ¥40", "Pay at evil.ru"]
+
+
+def test_labels_salted_with_amounts_or_links_never_reach_the_feed(client, scratch_dsn):  # noqa: F811
+    ana = client.ids["users"][0]
+    with connect(scratch_dsn) as conn:
+        hh = conn.execute("SELECT household_id FROM household_members WHERE user_id = %s", (ana,)).fetchone()[
+            0
+        ]
+        for label in SALTED:
+            conn.execute(INSERT, (hh, "expense_created", ana, label))
+        conn.commit()
+    login(client)
+    labels = [e["subject_label"] for e in client.get("/api/feed").json()["events"]]
+    assert labels == ["a bill"] * len(SALTED)

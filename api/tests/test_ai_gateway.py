@@ -545,28 +545,85 @@ def test_safe_model_reply_is_plain_capped_text(client):
     assert len(reply["reply"]) <= gateway.REPLY_MAX and "\x07" not in reply["reply"]
 
 
-@pytest.mark.parametrize(
-    ("text", "expected"),
-    [
-        ("There are 3 ways to split it.", "There are 3 ways to split it."),
-        (
-            "Rent of $1,200.50 USD is due soon, and 2 bills are open.",
-            "Rent of is due soon, and 2 bills are open.",
-        ),
-        ("Each pays $12 and Jake pays 12 dollars.", "Each pays and Jake pays."),
-    ],
-)
-def test_safe_reply_keeps_small_counts_and_removes_currency_amounts(text, expected):
-    assert gateway.safe_reply(text) == expected
+# Every bypass from notes/review-stretch.md (findings 1 and 2): the whole reply falls back to the template.
+REVIEW_BYPASSES = [
+    "Each pays 36.",
+    "Your share is \uff13\uff16.",
+    "Each owes \uff04\uff13\uff16",
+    "That's \u00a536 each.",
+    "36 EUR each",
+    "USD 36",
+    "It costs 36 cents",
+    "Pay 12. 50 each",
+    "1 2 0 0 total",
+    "\u2153",
+    "\u00b2\u2075",
+    "thirty-six dollars each",
+    "[pay here](javascript:alert(1))",
+    "Visit evil.ru now",
+    "\uff45\uff56\uff49\uff4c\uff0e\uff43\uff4f\uff4d",
+    "\uff28\uff34\uff34\uff30\uff33\uff1a//x",
+]
+
+# More tricky inputs: other scripts' digits, zero-width splits, currency signs, words, codes, links.
+TRICKY = [
+    "Each pays \u0663\u0666",  # Arabic-Indic digits
+    "Each pays \u0968\u096c",  # Devanagari digits
+    "Each pays 3\u200b6",  # zero-width space between digits
+    "Each pays \u20ac",
+    "Costs \u20b9 a lot",
+    "Each owes \u20bf now",
+    "That's \u00a3 each",
+    "Each owes \u2161\u2167 now",  # Roman numeral characters
+    "Pay \u2460 now",  # circled digit
+    "That is \u00bd each",
+    "about forty bucks",
+    "a hundred each",
+    "Each pays five",
+    "You owe two",
+    "Your share is nine",
+    "a few euros",
+    "some quid",
+    "it is 20 GBP",
+    "costs 5 yen",
+    "split 3 ways for 40",
+    "13 ways",
+    "3.5 ways",
+    "$3 ways",
+    "Pay at mailto:x",
+    "go to data:text/html,hi",
+    "see x.co/pay",
+    "[here](x)",
+    "email me at a@b",
+    "visit www now",
+    "see //evil",
+    "Pay <b>now</b>",
+    "Pay u_3 now",
+    "It was 1999 ago",
+]
 
 
-@pytest.mark.parametrize("text", ["It was 1999 ago", "Pay u_3 now", "go to www.x.test", "$ now"])
-def test_safe_reply_rejects_ids_links_and_stray_digits(text):
+@pytest.mark.parametrize("text", REVIEW_BYPASSES + TRICKY)
+def test_safe_reply_rejects_amounts_numbers_and_links(text):
     assert gateway.safe_reply(text) is None
 
 
-def test_model_free_text_with_a_currency_amount_stays_model_sourced_without_the_amount(client):
+@pytest.mark.parametrize(
+    "text",
+    [
+        "There are 3 ways to split it.",
+        "2 bills are open and 1 roommate has paid.",
+        "Split it with Jake and Priya? Check the shares, then confirm.",
+        "Ask in the Help panel for legal questions.",
+        "One purchase matched. Check the shares before you confirm.",
+    ],
+)
+def test_safe_reply_keeps_plain_text_and_small_counts(text):
+    assert gateway.safe_reply(text) == text
+
+
+def test_model_free_text_with_a_currency_amount_falls_back_to_the_template(client):
     login(client, "Ana")
     res = ask(client, "what's up", script=["You could split it 3 ways for $40.00 total."]).json()
-    assert res["source"] == "model"
-    assert "$" not in res["reply"] and "40" not in res["reply"] and "3 ways" in res["reply"]
+    assert res["source"] == "template"
+    assert "$40" not in res["reply"]
