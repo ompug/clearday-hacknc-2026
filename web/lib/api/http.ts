@@ -2,6 +2,7 @@ import type { ApiClient } from "./client";
 import {
   ApiError,
   type AccountsResponse,
+  type AnnouncementResponse,
   type AssistantRequest,
   type AssistantResponse,
   type CreateExpenseRequest,
@@ -53,6 +54,7 @@ export const httpApi: ApiClient = {
       throw error;
     }
   },
+  getAnnouncement: () => request<AnnouncementResponse>("/api/voice/announcement"),
   getSky: () => request<SkyResponse>("/api/sky"),
   getAccounts: () => request<AccountsResponse>("/api/accounts"),
   pay: (body: PaymentRequest) =>

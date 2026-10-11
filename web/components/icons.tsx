@@ -168,3 +168,19 @@ export function ArrowLeftIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function PlayIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5v14l11-7z" />
+    </Svg>
+  );
+}
+
+export function PauseIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5v14M16 5v14" />
+    </Svg>
+  );
+}

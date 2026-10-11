@@ -7,6 +7,7 @@ import {
   api,
   realtime,
   type Account,
+  type AnnouncementResponse,
   type CreateExpenseResult,
   type Me,
   type PaymentResult,
@@ -25,6 +26,7 @@ import { StateIcon } from "../StateBadge";
 import { ListView } from "./ListView";
 import { PayDialog } from "./PayDialog";
 import { SkyView } from "./SkyView";
+import { VoiceAnnouncement } from "./VoiceAnnouncement";
 
 const LEGEND: BubbleState[] = ["clear", "watch", "tight", "waiting"];
 
@@ -44,6 +46,7 @@ export function SkyScreen() {
   const [openBubble, setOpenBubble] = useState<SkyBubble | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [splitOpen, setSplitOpen] = useState(false);
+  const [voice, setVoice] = useState<AnnouncementResponse | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const refresh = useCallback(async () => {
@@ -79,6 +82,11 @@ export function SkyScreen() {
     const offPop = realtime.on("bubble.popped", (event) => {
       setAnnouncement(`${event.label} is fully covered. Bubble popped for the household.`);
       void refresh();
+      // Household-level text and audio; if it fails the toast above is still the transcript.
+      api
+        .getAnnouncement()
+        .then(setVoice)
+        .catch(() => undefined);
     });
     const offFeed = realtime.on("feed.created", (event) => {
       if (event.type === "expense_created")
@@ -226,6 +234,8 @@ export function SkyScreen() {
             </li>
           ))}
         </ul>
+
+        {voice ? <VoiceAnnouncement announcement={voice} onDismiss={() => setVoice(null)} /> : null}
 
         <SplitAssistant disabled={!me} onCreated={handleCreated} />
 

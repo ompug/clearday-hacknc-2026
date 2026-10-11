@@ -78,7 +78,8 @@ export interface SkyBubble {
   kind: "bill" | "shared";
   label: string;
   due_date: IsoDate;
-  /** The current user's part. Equals `total_cents` for a personal bill. */
+  /** The current user's part still to pay (a partial share's remainder; the whole share once paid).
+   * The amount `POST /api/payments` accepts. Equals `total_cents` for a personal bill. */
   your_share_cents: Cents;
   total_cents: Cents;
   /** Status of the current user's share (or the bill itself). */
@@ -342,4 +343,16 @@ export interface AssistantResponse {
   /** "template" when the model was slow, rate-limited or unavailable. */
   source: "model" | "template";
   proposal: AssistantSplitProposal | null;
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/voice/announcement: household-level spoken text, no amounts or names.
+// ---------------------------------------------------------------------------
+
+export interface AnnouncementResponse {
+  /** Always shown as the transcript. */
+  text: string;
+  /** Null when ElevenLabs is unavailable: text only. Fetch with the session cookie. */
+  audio_url: string | null;
+  source: "elevenlabs" | "cache" | "text";
 }

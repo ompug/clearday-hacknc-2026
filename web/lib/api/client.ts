@@ -1,6 +1,7 @@
 import type {
   AccountsResponse,
   AssistantRequest,
+  AnnouncementResponse,
   AssistantResponse,
   CreateExpenseRequest,
   CreateExpenseResult,
@@ -35,6 +36,8 @@ export interface ApiClient {
   createExpense(request: CreateExpenseRequest): Promise<CreateExpenseResult>;
   /** Natural-language split: a proposal to confirm; nothing is saved. */
   askAssistant(request: AssistantRequest): Promise<AssistantResponse>;
+  /** Spoken household announcement for a cleared shared bill: transcript plus optional audio. */
+  getAnnouncement(): Promise<AnnouncementResponse>;
 }
 
 export type Unsubscribe = () => void;

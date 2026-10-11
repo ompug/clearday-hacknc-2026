@@ -310,6 +310,12 @@ export const mockApi: ApiClient = {
     return delay(createExpense(userId, req));
   },
   getForecast: async () => delay(buildForecast(requireUser())),
+  getAnnouncement: async () =>
+    delay({
+      text: "A shared bill just cleared. Every shared bill is covered. Skies look clear this week.",
+      audio_url: null,
+      source: "text" as const,
+    }),
   askAssistant: async ({ message }) => delay(mockAssistant(requireUser(), message)),
 };
 
