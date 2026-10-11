@@ -43,6 +43,7 @@ SKY_BUBBLE = {
     "share_id": {STR, NULL},
     "default_account_id": {STR, NULL},
     "cluster_id": {STR, NULL},
+    "payable": {"bool"},
 }
 SKY_CLUSTER = {"cluster_id": {STR}, "label": {STR}, "bubble_ids": {"list"}}
 SKY = {
@@ -443,6 +444,31 @@ def test_sky_clusters_recurring_subscriptions(client, scratch_dsn):
     client.cookies.clear()
     login(client, 1)  # Ben's sky never shows Ana's subscriptions
     assert client.get("/api/sky").json()["clusters"] == []
+
+
+def test_subscription_bubbles_are_not_payable(client, scratch_dsn):
+    """Spec: subscriptions are predicted renewals (recurring-charge detection), not bills to pay."""
+    _add_card_charges(
+        scratch_dsn,
+        client.ids["users"][0],
+        client.ids["card"],
+        [("StreamCo", "subscriptions", 1500, 50), ("StreamCo", "subscriptions", 1500, 20)],
+    )
+    login(client)
+    by_prefix = {b["bubble_id"].split("_")[0]: b for b in client.get("/api/sky").json()["bubbles"]}
+    assert by_prefix["sub"]["payable"] is False
+    assert by_prefix["bill"]["payable"] is True
+    res = client.post(
+        "/api/payments",
+        json={
+            "idempotency_key": "sub-pop-0000001",
+            "bubble_id": by_prefix["sub"]["bubble_id"],
+            "account_id": f"acct_{client.ids['card']}",
+            "amount_cents": 1500,
+        },
+    )
+    assert res.status_code == 409
+    assert "automatically" in res.json()["detail"]
 
 
 def test_sky_single_subscription_is_not_clustered(client, scratch_dsn):

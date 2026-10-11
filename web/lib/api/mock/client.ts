@@ -137,6 +137,7 @@ function buildSky(userId: string): SkyResponse {
           share_id: mine.share_id,
           default_account_id: defaultAccount,
           cluster_id: null,
+          payable: mine.status === "open" || mine.status === "partial",
         } satisfies SkyBubble,
       ];
     });
@@ -163,6 +164,7 @@ function buildSky(userId: string): SkyResponse {
         share_id: null,
         default_account_id: defaultAccount,
         cluster_id: b.cluster ? `cl_${userId}_${b.cluster}` : null,
+        payable: b.cluster !== "subscriptions",
       };
     });
 
@@ -254,6 +256,8 @@ function pay(userId: string, req: PaymentRequest): PaymentResult {
   } else {
     const bill = state.bills.find((b) => b.bubble_id === req.bubble_id && b.user_id === userId);
     if (!bill || bill.status === "paid") throw new ApiError(409, "Nothing left to pay");
+    if (bill.cluster === "subscriptions")
+      throw new ApiError(409, "Subscriptions renew automatically; there is nothing to pay here");
     if (bill.amount_cents !== req.amount_cents) throw new ApiError(409, "Amount changed");
     bill.status = "paid";
     result = {
@@ -302,7 +306,8 @@ export const mockApi: ApiClient = {
   createExpense: async (req) => {
     const userId = requireUser();
     return delay(createExpense(userId, req));
-  },  getForecast: async () => delay(buildForecast(requireUser())),
+  },
+  getForecast: async () => delay(buildForecast(requireUser())),
 };
 
 // --- Shared expenses (mirrors POST /api/expenses) ---------------------------

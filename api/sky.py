@@ -402,6 +402,7 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
                 "share_id": ids.encode(ids.SHARE, s.share_id),
                 "default_account_id": default_account,
                 "cluster_id": None,
+                "payable": s.status in ("open", "partial"),
             }
         )
 
@@ -424,6 +425,7 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
             "share_id": None,
             "default_account_id": account,
             "cluster_id": None,
+            "payable": True,
         }
 
     for b in personal_bills(conn, user.user_id):
@@ -440,6 +442,7 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
             sub.bubble_id, sub.label, sub.due_on, sub.amount_cents, ids.encode(ids.ACCOUNT, sub.account_id)
         )
         bubble["cluster_id"] = SUBSCRIPTIONS_CLUSTER_ID if in_cluster else None
+        bubble["payable"] = False  # a predicted renewal: it charges on its own, nothing to pay here
         bubbles.append(bubble)
 
     for bubble, necessity in zip(bubbles, _necessities(categories), strict=True):

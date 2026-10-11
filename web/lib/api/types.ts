@@ -98,6 +98,11 @@ export interface SkyBubble {
   default_account_id: string | null;
   /** Bubbles in a cluster render as one bubble until expanded. */
   cluster_id: string | null;
+  /**
+   * Whether POST /api/payments accepts this bubble now. False for a paid or disputed share and for a
+   * predicted subscription renewal (`sub_`), which charges on its own.
+   */
+  payable: boolean;
 }
 
 export interface SkyCluster {

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { ApiError, api, type Account, type PaymentResult, type SkyBubble } from "@/lib/api";
-import { bubbleState, canPay } from "@/lib/bubbles";
+import { bubbleState, canPay, notPayableReason } from "@/lib/bubbles";
 import { daysBetween, dueDayName, dueLabel, todayIso } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { CloseIcon, PeopleIcon } from "../icons";
@@ -196,9 +196,11 @@ export function PayDialog({
           ) : (
             <>
               <p className="rounded-2xl bg-sky-100 px-4 py-3 font-medium">
-                {bubble.status === "disputed"
-                  ? "This share is on hold while the household sorts it out. Reminders are paused."
-                  : `Your share is paid. Waiting on ${waitingOn} ${waitingOn === 1 ? "roommate" : "roommates"}; the bubble pops for everyone when it's covered.`}
+                {notPayableReason(bubble)
+                  ? "This is a predicted subscription renewal. It charges your account automatically, so there's nothing to pay here."
+                  : bubble.status === "disputed"
+                    ? "This share is on hold while the household sorts it out. Reminders are paused."
+                    : `Your share is paid. Waiting on ${waitingOn} ${waitingOn === 1 ? "roommate" : "roommates"}; the bubble pops for everyone when it's covered.`}
               </p>
               <div className="flex justify-end">
                 <button

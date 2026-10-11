@@ -254,6 +254,8 @@ def pop_bubble(
         pop = _pop_shared
     elif ids.decode(ids.BILL, bubble_id) is not None:
         pop = _pop_bill
+    elif ids.decode(ids.SUBSCRIPTION, bubble_id) is not None:
+        raise PaymentError(409, "Subscriptions renew automatically; there is nothing to pay here")
     else:
         raise PaymentError(404, "Bubble not found")
     try:

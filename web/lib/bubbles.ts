@@ -23,7 +23,13 @@ export function bubbleState(bubble: SkyBubble): BubbleState {
 }
 
 export function canPay(bubble: SkyBubble): boolean {
-  return bubble.status === "open" || bubble.status === "partial";
+  return bubble.payable && (bubble.status === "open" || bubble.status === "partial");
+}
+
+/** Why an open bubble can't be paid here, or null. Read out with the bubble's name. */
+export function notPayableReason(bubble: SkyBubble): string | null {
+  if (bubble.payable || bubble.status === "paid" || bubble.status === "disputed") return null;
+  return "Renews automatically, nothing to pay here";
 }
 
 export function progressLabel(bubble: SkyBubble): string | null {
@@ -41,6 +47,8 @@ export function bubbleAccessibleName(bubble: SkyBubble): string {
   const progress = progressLabel(bubble);
   if (progress) parts.push(progress);
   parts.push(STATE_LABELS[bubbleState(bubble)].toLowerCase());
+  const reason = notPayableReason(bubble);
+  if (reason) parts.push(reason.toLowerCase());
   return parts.join(", ");
 }
 
