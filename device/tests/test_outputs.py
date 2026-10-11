@@ -26,9 +26,9 @@ def test_fake_bulb_satisfies_protocol_and_logs(caplog):
     assert "bulb celebrate" in caplog.text
 
 
-@pytest.mark.parametrize("kind", ["fake", "wiz", "kasa", "mystery"])
+@pytest.mark.parametrize("kind", ["fake", "wiz", "mystery", "homeassistant"])
 def test_make_bulb_falls_back_to_fake(kind):
-    assert isinstance(make_bulb(kind, "10.0.0.5"), FakeBulb)
+    assert isinstance(make_bulb(kind, {}), FakeBulb)
 
 
 def test_every_state_light_has_a_pattern_with_safe_command_rate():

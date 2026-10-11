@@ -16,7 +16,6 @@ class Config:
     api_url: str
     device_token: str
     bulb: str = "fake"
-    bulb_ip: str | None = None
     matrix: str = "log"
     audio: bool = True
     keypad_device: str | None = None
@@ -48,8 +47,7 @@ def from_env(env: dict[str, str] | None = None) -> Config:
     return Config(
         api_url=env.get("CLEARDAY_API_URL", "http://localhost:8000").rstrip("/"),
         device_token=token,
-        bulb=env.get("CLEARDAY_BULB", "fake"),
-        bulb_ip=env.get("CLEARDAY_BULB_IP") or None,
+        bulb=env.get("BULB_DRIVER", "fake"),
         matrix=env.get("CLEARDAY_MATRIX", "log"),
         audio=env.get("CLEARDAY_AUDIO", "1") not in ("0", "false", "off"),
         keypad_device=env.get("CLEARDAY_KEYPAD_DEVICE") or None,

@@ -29,7 +29,7 @@ def main() -> None:
 
     controller = Controller(
         machine=DeviceMachine(),
-        lights=LightPlayer(make_bulb(cfg.bulb, cfg.bulb_ip)),
+        lights=LightPlayer(make_bulb(cfg.bulb)),
         matrix=make_matrix(cfg.matrix),
         audio=Audio(enabled=cfg.audio),
         api=ApiClient(cfg.api_url, cfg.device_token),

@@ -8,7 +8,7 @@ clearday_home/
   payloads.py     Allowlist parsers for /api/household/status, /api/device/summary, device.announce
   bridge.py       Socket.IO client (device token auth) + status polling fallback, reconnect with backoff
   controller.py   Applies state-machine effects to the bulb, matrix and audio
-  bulb.py         BulbDriver protocol, FakeBulb, empty WizBulb / KasaBulb slots
+  bulb.py         BulbDriver protocol, FakeBulb, HomeAssistantBulb (stdlib REST)
   lights.py       Light patterns (breathing, sparkle, burst...) as slow loops of bulb commands
   matrix.py       Sends bridge strings ("matrix:sun") to the sketch
   audio.py        Chime + announcement/briefing playback (ffplay, mpg123 or aplay)
@@ -48,8 +48,10 @@ On the UNO Q (Debian on the Linux side):
 | --- | --- | --- |
 | `CLEARDAY_DEVICE_TOKEN` | (required) | Household device token: read-only, hashed and revocable on the server. Sent as Socket.IO `auth={"token": ...}` and HTTP `Authorization: Bearer`. |
 | `CLEARDAY_API_URL` | `http://localhost:8000` | The Clearday API (the only host the device talks to). |
-| `CLEARDAY_BULB` | `fake` | `fake`, `wiz` or `kasa`. Unimplemented or failing drivers fall back to `fake` (matrix-only demo). |
-| `CLEARDAY_BULB_IP` | | Bulb IP on the hotspot, for `wiz` / `kasa`. |
+| `BULB_DRIVER` | `fake` | `fake` or `homeassistant`. A misconfigured driver falls back to `fake` (matrix-only demo). |
+| `HA_URL` | | Home Assistant base URL, e.g. `http://homeassistant.local:8123`. |
+| `HA_TOKEN` | | Long-lived access token (secret; only in gitignored `device/.env`). |
+| `HA_LIGHT_ENTITY` | | The bulb's entity_id, e.g. `light.ecosmart_bulb`. |
 | `CLEARDAY_MATRIX` | `log` | `bridge` on the UNO Q, `log` elsewhere. |
 | `CLEARDAY_AUDIO` | `1` | `0` to skip playback (play audio from a laptop instead). |
 | `CLEARDAY_KEYPAD_DEVICE` | auto | `/dev/input/eventN` of the keypad. |
@@ -59,13 +61,17 @@ On the UNO Q (Debian on the Linux side):
 
 `device/.env` is gitignored. No Nessie, Gemini or ElevenLabs keys ever go on the device.
 
-## Where the bulb driver plugs in
+## Bulb: EcoSmart via Home Assistant
 
-`clearday_home/bulb.py` defines the `BulbDriver` protocol: `set_color(rgb)`, `set_brightness(percent)`, `celebrate()`, `off()`. `make_bulb()` picks the driver from `CLEARDAY_BULB`. Once the bulb is bought:
+`HomeAssistantBulb` (`clearday_home/bulb.py`) calls HA's REST API with the standard library only: `POST {HA_URL}/api/services/light/turn_on` or `turn_off` with `Authorization: Bearer {HA_TOKEN}` and `{"entity_id", "rgb_color", "brightness", "transition"}`. Timeout is 2 s; on failure it logs the error type once (never the token), skips calls for 5 s, and the state machine and matrix carry on. The celebration is a short colour sequence on a background thread, cancelled by any newer command.
 
-1. Get team sign-off for the library, then add `pywizlight` (WiZ) or `python-kasa` (Kasa) to `device/pyproject.toml`.
-2. Fill in `WizBulb` or `KasaBulb` (both libraries are asyncio: run one event loop on a background thread and submit coroutines to it).
-3. Set `CLEARDAY_BULB` and `CLEARDAY_BULB_IP`, and check that commands stay at a few per second (`lights.MIN_HOLD`).
+Setup:
+
+1. Add the EcoSmart bulb to Home Assistant (a color-capable `light` entity).
+2. In HA open your Profile (bottom left), then Security, then Long-lived access tokens, and create one. Copy it once; HA never shows it again.
+3. Find the entity_id under Settings, Devices & services, Entities (search "light"), e.g. `light.ecosmart_bulb`.
+4. In `device/.env` (gitignored) set `BULB_DRIVER=homeassistant`, `HA_URL`, `HA_TOKEN`, `HA_LIGHT_ENTITY`.
+5. Check it in about 10 seconds: `cd device && uv run python scripts/ha_check.py`. It cycles blue, amber, sky blue, white, gray, a celebration, then off.
 
 ## Backend contract the device expects
 
