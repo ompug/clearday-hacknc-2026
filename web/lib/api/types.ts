@@ -487,3 +487,16 @@ export interface AnalystSegmentsResponse {
   segments: AnalystSegment[];
   note: string;
 }
+
+// ---------------------------------------------------------------------------
+// Weekly recap (GET /api/recap/latest). Household-level counts only; the transcript is always present.
+// ---------------------------------------------------------------------------
+
+export interface RecapResponse {
+  week_start: string;
+  lines: { speaker: "A" | "B"; text: string }[];
+  transcript: string;
+  /** Null when ElevenLabs is unavailable: transcript only. Fetch with the session cookie. */
+  audio_url: string | null;
+  source: "elevenlabs" | "cache" | "text";
+}

@@ -376,6 +376,25 @@ export const mockApi: ApiClient = {
       ],
       note: "Invented households only. Share of households with better than even odds of a shortfall in the next 30 days. Used to offer support early, never for credit decisions.",
     }),
+  getRecap: async () =>
+    delay({
+      week_start: "2026-10-04",
+      lines: [
+        {
+          speaker: "A" as const,
+          text: "Welcome to your Clearday week in review, for your household.",
+        },
+        {
+          speaker: "B" as const,
+          text: "This week the household cleared 1 shared bill and paid 3 shares.",
+        },
+        { speaker: "A" as const, text: "Skies look clear ahead. Nice work, everyone." },
+      ],
+      transcript:
+        "Welcome to your Clearday week in review, for your household. This week the household cleared 1 shared bill and paid 3 shares. Skies look clear ahead. Nice work, everyone.",
+      audio_url: null,
+      source: "text" as const,
+    }),
   askAssistant: async ({ message }) => delay(mockAssistant(requireUser(), message)),
 };
 

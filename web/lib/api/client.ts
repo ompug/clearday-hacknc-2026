@@ -8,6 +8,7 @@ import type {
   AnomaliesResponse,
   BacktestSummary,
   PriceItemsRequest,
+  RecapResponse,
   PriceTipsResponse,
   CreateExpenseResult,
   DuplicateSubscriptionsResponse,
@@ -54,6 +55,8 @@ export interface ApiClient {
   rememberPrices(req: PriceItemsRequest): Promise<void>;
   /** Segment hardship rates over synthetic households (never real users). */
   getAnalystSegments(): Promise<AnalystSegmentsResponse>;
+  /** This week's two-host recap: lines, transcript and optional audio. */
+  getRecap(): Promise<RecapResponse>;
 }
 
 export type Unsubscribe = () => void;

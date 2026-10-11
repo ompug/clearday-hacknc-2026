@@ -20,6 +20,7 @@ import {
   type PaymentRequest,
   type PaymentResult,
   type ReceiptReadResult,
+  type RecapResponse,
   type SkyResponse,
 } from "./types";
 
@@ -81,6 +82,7 @@ export const httpApi: ApiClient = {
     await request("/api/prices/remember", { method: "POST", body: JSON.stringify(req) });
   },
   getAnalystSegments: () => request<AnalystSegmentsResponse>("/api/analyst/segments"),
+  getRecap: () => request<RecapResponse>("/api/recap/latest"),
   getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),
   getAccounts: () => request<AccountsResponse>("/api/accounts"),

@@ -6,7 +6,10 @@ import { DisplaySettings } from "./DisplaySettings";
 import { ClearMark } from "./icons";
 
 /** Secondary pages, in the order they were added. */
-const MORE_LINKS = [{ href: "/analyst", label: "Analyst view" }];
+const MORE_LINKS = [
+  { href: "/recap", label: "Weekly recap" },
+  { href: "/analyst", label: "Analyst view" },
+];
 
 export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => void }) {
   return (
