@@ -22,6 +22,7 @@ dist/
 # Node / Next.js
 node_modules/
 .next/
+.next-e2e/
 out/
 .vercel/
 *.tsbuildinfo
@@ -53,3 +54,4 @@ logs/
 *.env
 *credentials*
 !api/.env.example
+*api_key*
