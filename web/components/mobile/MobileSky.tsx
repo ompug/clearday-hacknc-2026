@@ -107,7 +107,12 @@ export function MobileSky() {
         <p className="text-4xl font-extrabold tracking-tight text-navy-950 tabular-nums">
           {formatCents(sky.safe_to_spend_cents)}
         </p>
-        <ul aria-label="Your accounts" className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        <ul
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+          tabIndex={0}
+          aria-label="Your accounts"
+          className="mt-3 flex gap-2 overflow-x-auto pb-1"
+        >
           {accounts.map((a) => (
             <li
               key={a.account_id}

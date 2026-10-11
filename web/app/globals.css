@@ -82,13 +82,13 @@ body {
     radial-gradient(circle 1.2rem at 61% 26%, rgb(200 240 255 / 0.4), transparent 70%),
     /* grass hills */
     radial-gradient(
-        ellipse 70% 22rem at 20% calc(100% + 15rem),
+        ellipse 70% 22rem at 20% calc(100% + 6rem),
         #7ed957 0%,
         #4caf3a 55%,
         transparent 56%
       ),
     radial-gradient(
-      ellipse 80% 24rem at 85% calc(100% + 17rem),
+      ellipse 80% 24rem at 85% calc(100% + 8rem),
       #9be36a 0%,
       #3f9c31 55%,
       transparent 56%
