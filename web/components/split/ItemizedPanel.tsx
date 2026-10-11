@@ -1,8 +1,16 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { ApiError, api, type HouseholdMember, type ReceiptReadResult } from "@/lib/api";
+import {
+  ApiError,
+  api,
+  type HouseholdMember,
+  type PriceTip,
+  type ReceiptReadResult,
+} from "@/lib/api";
+import { formatCents } from "@/lib/money";
 import { CheckIcon, CloseIcon, FlagIcon, PlusIcon } from "../icons";
+import { todayIso } from "@/lib/dates";
 import { centsToInput } from "./cents";
 
 export interface DraftItem {
@@ -27,6 +35,13 @@ export function itemsFromReceipt(result: ReceiptReadResult, assignees: string[])
     amount: centsToInput(i.amount_cents),
     assignees,
   }));
+}
+
+function formatShortDate(iso: string): string {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function scanFailure(error: unknown): string {
@@ -58,6 +73,7 @@ export function ItemizedPanel({
   onTax,
   onTip,
   onMerchant,
+  onScanned,
   fieldClass,
 }: {
   people: HouseholdMember[];
@@ -70,12 +86,15 @@ export function ItemizedPanel({
   onTax: (value: string) => void;
   onTip: (value: string) => void;
   onMerchant: (merchant: string) => void;
+  /** The store and date the scan read, so the dialog can remember prices once it is saved. */
+  onScanned: (scan: { merchant: string; date: string | null }) => void;
   fieldClass: string;
 }) {
   const uid = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [tips, setTips] = useState<PriceTip[]>([]);
   const everyone = people.map((p) => p.user_id);
 
   async function scan(file: File | undefined) {
@@ -92,6 +111,17 @@ export function ItemizedPanel({
       onTax(centsToInput(result.tax_cents));
       onTip(centsToInput(result.tip_cents));
       onMerchant(result.merchant);
+      onScanned({ merchant: result.merchant, date: result.date });
+      setTips([]);
+      // Price memory is a nicety: a failure here never blocks the split.
+      api
+        .getPriceTips({
+          merchant: result.merchant,
+          date: result.date ?? todayIso(),
+          items: result.items,
+        })
+        .then((r) => setTips(r.tips))
+        .catch(() => setTips([]));
       setNote({
         ok: true,
         text: `Read ${result.items.length} items from the receipt. Check them against the paper, then tick who shared each one.`,
@@ -150,6 +180,22 @@ export function ItemizedPanel({
             </span>
           ) : null}
         </p>
+        {tips.length > 0 ? (
+          <section
+            aria-label="Price memory"
+            className="rounded-xl bg-sky-100 px-3 py-2 text-navy-900"
+          >
+            <h3 className="font-bold">Cheaper before</h3>
+            <ul className="mt-1 list-disc pl-5">
+              {tips.map((t) => (
+                <li key={t.label}>
+                  {t.label} was {formatCents(t.savings_cents_per_unit)} cheaper at {t.best.merchant}{" "}
+                  on {formatShortDate(t.best.date)}.
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
 
       <ul aria-label="Items" className="flex flex-col gap-3">

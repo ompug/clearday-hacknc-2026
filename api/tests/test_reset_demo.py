@@ -225,3 +225,24 @@ def test_reset_deletes_expenses_the_seed_did_not_create(seeded):
     assert snapshot(conn) == before_db
     again = reset_demo.reset(conn, None, plan=seeded["plan"])
     assert not any(again.db.values())
+
+
+def test_reset_reseeds_price_memory_and_is_idempotent(seeded):
+    conn = seeded["conn"]
+    maya = conn.execute("SELECT id FROM users WHERE display_name = 'Maya'").fetchone()[0]
+    reset_demo.reset(conn, seeded["client"], plan=seeded["plan"])
+    rows = conn.execute(
+        """SELECT i.normalized_name, i.unit_price_cents FROM receipt_items i
+           JOIN receipts r ON r.id = i.receipt_id WHERE r.user_id = %s ORDER BY r.merchant, i.id""",
+        (maya,),
+    ).fetchall()
+    assert ("organic eggs", 380) in rows and ("organic eggs", 440) in rows
+    conn.execute(
+        "INSERT INTO receipts (user_id, merchant, purchased_at, total_cents)"
+        " VALUES (%s, 'Stray', now(), 100)",
+        (maya,),
+    )
+    conn.commit()
+    assert reset_demo.reset(conn, seeded["client"], plan=seeded["plan"]).db["price memory reseeded"] == 1
+    assert conn.execute("SELECT count(*) FROM receipts WHERE merchant = 'Stray'").fetchone()[0] == 0
+    assert reset_demo.reset(conn, seeded["client"], plan=seeded["plan"]).db["price memory reseeded"] == 0

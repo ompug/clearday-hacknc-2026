@@ -7,6 +7,8 @@ import {
   type AssistantResponse,
   type AnomaliesResponse,
   type BacktestSummary,
+  type PriceItemsRequest,
+  type PriceTipsResponse,
   type CreateExpenseRequest,
   type DuplicateSubscriptionsResponse,
   type CreateExpenseResult,
@@ -72,6 +74,11 @@ export const httpApi: ApiClient = {
   getDuplicateSubscriptions: () =>
     request<DuplicateSubscriptionsResponse>("/api/insights/subscriptions"),
   getBacktest: () => request<BacktestSummary>("/api/insights/backtest"),
+  getPriceTips: (req: PriceItemsRequest) =>
+    request<PriceTipsResponse>("/api/prices/tips", { method: "POST", body: JSON.stringify(req) }),
+  rememberPrices: async (req: PriceItemsRequest) => {
+    await request("/api/prices/remember", { method: "POST", body: JSON.stringify(req) });
+  },
   getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),
   getAccounts: () => request<AccountsResponse>("/api/accounts"),

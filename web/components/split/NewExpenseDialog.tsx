@@ -68,6 +68,7 @@ export function NewExpenseDialog({
   const [members, setMembers] = useState<HouseholdMember[]>([]);
   const [draft, setDraft] = useState<Draft>(() => freshDraft([]));
   const [idempotencyKey, setIdempotencyKey] = useState("");
+  const [scan, setScan] = useState<{ merchant: string; date: string | null } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -82,6 +83,7 @@ export function NewExpenseDialog({
       setSubmitting(false);
       setServerError(null);
       setDraft(freshDraft(members));
+      setScan(null);
       /* eslint-enable react-hooks/set-state-in-effect */
       if (!dialog.open) dialog.showModal();
       // Start on the first field rather than the Close button.
@@ -234,6 +236,18 @@ export function NewExpenseDialog({
         ),
         due_date: draft.dueDate || null,
       });
+      if (itemized && scan) {
+        // Remember the confirmed items for price comparisons; never blocks or fails the save.
+        const kept = draft.items.flatMap((i, n) => {
+          const cents = itemCents[n];
+          return i.label.trim() && cents ? [{ label: i.label.trim(), amount_cents: cents }] : [];
+        });
+        if (kept.length > 0) {
+          void api
+            .rememberPrices({ merchant: scan.merchant, date: scan.date ?? todayIso(), items: kept })
+            .catch(() => undefined);
+        }
+      }
       onCreated(
         result,
         others.map((m) => m.display_name),
@@ -422,6 +436,7 @@ export function NewExpenseDialog({
                   onItems={(items) => update({ items })}
                   onTax={(tax) => update({ tax })}
                   onTip={(tip) => update({ tip })}
+                  onScanned={setScan}
                   onMerchant={(merchant) =>
                     setDraft((d) =>
                       d.label.trim() ? d : { ...d, label: merchant.slice(0, LABEL_MAX) },

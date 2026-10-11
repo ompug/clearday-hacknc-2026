@@ -373,6 +373,43 @@ export interface ReceiptReadResult {
 }
 
 // ---------------------------------------------------------------------------
+// Price memory. POST /api/prices/tips (items of a receipt just read -> where each was cheaper
+// before; saves nothing) and POST /api/prices/remember (the confirmed items, kept for later).
+// History is the signed-in user's own receipts only. Shown only in the app, never in the feed
+// or on Clearday Home.
+// ---------------------------------------------------------------------------
+
+export interface PriceItemsRequest {
+  merchant: string;
+  date: IsoDate;
+  items: ReceiptLineItem[];
+}
+
+export interface PricePoint {
+  /** Untrusted text; render as text only. */
+  merchant: string;
+  date: IsoDate;
+  unit_price_cents: Cents;
+}
+
+export interface PriceTip {
+  /** The item as written on this receipt (untrusted text). */
+  label: string;
+  /** The normalized item name. */
+  item: string;
+  /** The cheapest remembered price. */
+  best: PricePoint;
+  /** The most recent price, which is this receipt's. */
+  latest: PricePoint;
+  /** latest minus best, always above 0 here. */
+  savings_cents_per_unit: Cents;
+}
+
+export interface PriceTipsResponse {
+  tips: PriceTip[];
+}
+
+// ---------------------------------------------------------------------------
 // GET /api/voice/announcement: household-level spoken text, no amounts or names.
 // ---------------------------------------------------------------------------
 

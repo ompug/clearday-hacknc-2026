@@ -152,6 +152,58 @@ def _noon_utc(day: dt.date) -> dt.datetime:
     return dt.datetime(day.year, day.month, day.day, 12, tzinfo=dt.UTC)
 
 
+# Price memory for the demo: (merchant, days ago, [(receipt label, cents)]). Maya paid less for eggs at
+# Harris Teeter than the other store charged, so a new receipt with eggs shows "$0.60 cheaper".
+PRICE_HISTORY = [
+    ("Harris Teeter", 7, [("ORG EGGS 12CT", 380), ("WHL MLK 1GAL", 399), ("PPR TWL 6PK", 650)]),
+    ("Food Lion", 14, [("Organic Eggs", 440), ("Whole Milk 1 gal", 429)]),
+]
+
+
+def reseed_price_memory(conn, hh: Household) -> int:
+    """Maya's remembered receipts back to PRICE_HISTORY (dates relative to today). Returns 1 if it had
+    to change anything, 0 if she already had exactly these."""
+    from analytics import prices
+    from api import sky
+
+    maya = hh.users.get("maya")
+    if maya is None:
+        return 0
+    today = sky.today()
+    want = sorted((m, today - dt.timedelta(days=d), tuple(items)) for m, d, items in PRICE_HISTORY)
+    have = []
+    for rid, merchant, day in conn.execute(
+        "SELECT id, merchant, purchased_at FROM receipts WHERE user_id = %s", (maya,)
+    ).fetchall():
+        items = conn.execute(
+            "SELECT raw_label, unit_price_cents FROM receipt_items WHERE receipt_id = %s ORDER BY id", (rid,)
+        ).fetchall()
+        have.append((merchant, day, tuple((label, int(cents)) for label, cents in items)))
+    have.sort()
+    others = conn.execute(
+        "SELECT count(*) FROM receipts WHERE user_id = ANY(%s) AND user_id <> %s",
+        (list(hh.users.values()), maya),
+    ).fetchone()[0]
+    if have == want and not others:
+        return 0
+    conn.execute(
+        "DELETE FROM receipts WHERE user_id = ANY(%s)", (list(hh.users.values()),)
+    )  # items go with them (ON DELETE CASCADE)
+    for merchant, day, items in want:
+        rid = conn.execute(
+            "INSERT INTO receipts (user_id, merchant, purchased_at, total_cents) VALUES (%s, %s, %s, %s)"
+            " RETURNING id",
+            (maya, merchant, day, sum(c for _, c in items)),
+        ).fetchone()[0]
+        for label, cents in items:
+            conn.execute(
+                "INSERT INTO receipt_items (receipt_id, raw_label, normalized_name, unit_price_cents)"
+                " VALUES (%s, %s, %s, %s)",
+                (rid, label, prices.normalize(label), cents),
+            )
+    return 1
+
+
 def reset_db(conn, hh: Household, plan: Plan) -> Counter:
     """Runs inside the caller's transaction. Returns rows changed per kind."""
     counts: Counter = Counter()
@@ -224,6 +276,7 @@ def reset_db(conn, hh: Household, plan: Plan) -> Counter:
              AND s.status <> CASE WHEN s.user_id = e.payer_id THEN 'paid' ELSE 'open' END""",
         (hh.id,),
     ).rowcount
+    counts["price memory reseeded"] = reseed_price_memory(conn, hh)
     return counts
 
 

@@ -6,6 +6,8 @@ import type {
   CreateExpenseRequest,
   AnomaliesResponse,
   BacktestSummary,
+  PriceItemsRequest,
+  PriceTipsResponse,
   CreateExpenseResult,
   DuplicateSubscriptionsResponse,
   DemoPersona,
@@ -47,6 +49,8 @@ export interface ApiClient {
   getDuplicateSubscriptions(): Promise<DuplicateSubscriptionsResponse>;
   getBacktest(): Promise<BacktestSummary>;
   getAnomalies(): Promise<AnomaliesResponse>;
+  getPriceTips(req: PriceItemsRequest): Promise<PriceTipsResponse>;
+  rememberPrices(req: PriceItemsRequest): Promise<void>;
 }
 
 export type Unsubscribe = () => void;

@@ -19,6 +19,8 @@ PHASE1_TABLES = {
     "feed_events",
     "ai_audit",
     "revoked_sessions",
+    "receipts",
+    "receipt_items",
     "schema_migrations",
 }
 

@@ -346,6 +346,8 @@ export const mockApi: ApiClient = {
         },
       ],
     }),
+  getPriceTips: async () => delay({ tips: [] }),
+  rememberPrices: async () => delay(undefined),
   getAnomalies: async () =>
     delay({
       anomalies: [
