@@ -6,7 +6,7 @@ first. Against a stack that is already running and freshly reset:
     uv run python scripts/demo_rehearsal.py --web http://localhost:3001
 Playwright is a dev dependency; once per machine: uv run playwright install chromium.
 
-Beats: personas and the sky, Priya's tight-week forecast, Jake and Priya pop rent (Maya updates live,
+Beat order follows docs/06's 1:50 script. Beats: personas and the sky, Priya's tight-week forecast, Jake and Priya pop rent (Maya updates live,
 voice announcement with transcript), Maya splits last night's pizza with words, receipt scan with
 itemized split and price hint, duplicate subscriptions + anomaly + backtest, then list view,
 reduced-motion toggle and 200% text size. Needs a model for the receipt scan; if the reader is

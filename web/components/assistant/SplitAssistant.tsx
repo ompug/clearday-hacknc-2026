@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ApiError,
   api,
@@ -36,6 +36,15 @@ export function SplitAssistant({
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false); // the model is taking a while: show what it is doing
+  useEffect(() => {
+    if (!asking) return;
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => {
+      clearTimeout(timer);
+      setSlow(false);
+    };
+  }, [asking]);
 
   async function ask(event: React.FormEvent) {
     event.preventDefault();
@@ -137,7 +146,13 @@ export function SplitAssistant({
       </form>
 
       <div aria-live="polite" className="mt-4">
-        {asking ? <p className="text-navy-800">Looking for that purchase…</p> : null}
+        {asking ? (
+          <p className="text-navy-800">
+            {slow
+              ? "Gemma is reading your purchases and checking the split…"
+              : "Looking for that purchase…"}
+          </p>
+        ) : null}
         {answer && !proposal ? (
           <p className="rounded-2xl bg-white/80 p-4 font-semibold text-navy-950">{answer.reply}</p>
         ) : null}

@@ -1,21 +1,23 @@
 # Demo and Submission
 
-## 3-minute demo script (mobile-first)
+## 1:50 demo script (mobile-first, video max 2:00)
 
-Setup: the laptop runs the API, web and DB locally, plus Clearday Home (`bash scripts/dev.sh device`: EcoSmart bulb via Home Assistant, laptop speaker). Roommates use phones at `/m` on the same Wi-Fi. No Arduino/UNO Q today (deferred); a laptop screen shows the same sky as a backup.
+Setup: laptop runs API, web and DB locally. Record in Chrome device emulation at `/m` (390x844): one normal window for Jake, one incognito for Maya, a third for Priya. Before recording: `uv run python -m scripts.reset_demo && bash scripts/dev.sh warm` (caches the voice audio, forecasts and warms the model; the assistant call in the video is still live). Clearday Home (`bash scripts/dev.sh device`) supplies the bulb and speaker. Narration pace is about 140 words per minute; the budgets total about 230 words, leaving 10 seconds of slack.
 
-| Time | Show | Say |
-| --- | --- | --- |
-| 0:00 to 0:20 | Three phones (Maya, Jake, Priya) on the sky at `/m` | "Roommates fight about money more than anything. Venmo made splitting social but public. This is Clearday: every bill is a bubble, and the whole apartment sees the same sky." |
-| 0:20 to 1:00 | Jake pops Rent on his phone; Maya's phone updates live; the bulb flashes and the laptop voice announces | "Jake pays his share through a Nessie transfer and pops the bubble. Everyone updates live, the bulb celebrates, and the ElevenLabs voice tells the apartment without saying anyone's balance." |
-| 1:00 to 1:40 | Priya's phone: tight-week forecast | "Our Monte Carlo forecast flags Priya's rent as likely short: her checking runs tight before it is due. Read the label and the line under Rent on her forecast from the screen and say what it shows. It counts her share of household bills." |
-| 1:40 to 2:15 | Assistant: "split last night's pizza with Jake and Priya"; Find it, check shares, Confirm | "Gemma, Google's open model, finds the purchase through narrow, scoped tools. The server computes the split, I confirm, and they get a request bubble." |
-| 2:15 to 2:35 | Receipt scan on the phone | "Scan a receipt and the items become a split; the image is deleted after extraction." |
-| 2:35 to 3:00 | Show the hardware sketch/schematic, then toggle text size and reduced motion | "One household sharing its utilities, internet and subscriptions means fewer duplicate services and less waste; we don't measure that, it's just the nudge. Next is a custom Clearday Home PCB, schematic in progress, replacing today's laptop host. And accessibility is baseline: WCAG AA, list view, keyboard, reduced motion, transcripts." |
+| Time | Words | Show | Say |
+| --- | --- | --- | --- |
+| 0:00 to 0:22 | 45 | Priya's phone: the Rent bubble in storm colors, then her 30-day forecast with the Rent line | "Roommates fight about money more than anything. Clearday turns every bill into a bubble the whole apartment sees. Our Monte Carlo forecast shows Priya's checking running tight before rent is due, so she hears it before it hurts." |
+| 0:22 to 0:50 | 45 | Jake pops Rent; Maya's phone updates live; Priya pops the last share; bulb flashes, voice plays (transcript on screen) | "Jake pays through a Nessie transfer and pops the bubble. Maya's phone updates instantly. When the last share clears, the Clearday Home bulb celebrates and an ElevenLabs voice tells the apartment, with no names and no amounts." |
+| 0:50 to 1:12 | 40 | Maya: "split last night's pizza with Jake and Priya", Find it, Confirm. If it takes over 4 s, the screen reads "Gemma is reading your purchases"; narrate over it | "I ask Gemma, Google's open model, in plain words. It finds the pizza through narrow tools, the server computes every cent, I confirm, and Jake gets a request bubble." |
+| 1:12 to 1:24 | 25 | Receipt scan (only if time allows; otherwise skip the visuals and say the line over the pizza result) | "Or scan a receipt: items become a split, and the image is deleted after reading." |
+| 1:24 to 1:38 | 30 | Forecast page: duplicate Spotify card | "Clearday spots duplicate subscriptions. One household sharing services means less waste; that is the nudge, not a measured claim." |
+| 1:38 to 1:50 | 35 | `docs/img/design/hardware-vision.png`, then text-size and reduced-motion toggles | "Next is a custom Clearday Home board replacing the laptop. Accessibility is built in: WCAG AA, list view, keyboard, reduced motion and transcripts. Nessie, ElevenLabs, Tiger Data." |
+
+Cut order if over time: receipt first, then the sustainability sentence, then the hardware line. Never cut the live pop, the forecast or accessibility. `bash scripts/dev.sh rehearse` walks these beats in the same order and prints per-beat timings.
 
 Be honest when asked: the forecast, backtest and several analytics modules are stubs returning deterministic data (the ledger math is real); the model is Gemma, not Gemini; everything is hosted locally on the laptop; the Arduino UNO Q build is deferred.
 
-In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each. Judge Q&A still applies; the 2-minute video cut keeps beats 1, 2, 4 and 6.
+In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each. Judge Q&A still applies.
 
 ### Opening the mobile app (`/m`)
 
@@ -59,7 +61,7 @@ Devpost closes at 10:00 AM EST Sunday with no extensions; submit early and keep 
 - [ ] General track selected (or Beginner if more than half the team is new to hackathons)
 - [ ] Tracks opted in: Nessie, ElevenLabs, Tiger Data, Community, Commit
 - [ ] GitHub link to a public repo with a README (README.md written; confirm the repo is public)
-- [ ] Demo video 2 minutes or less (cut from the 3-minute script)
+- [ ] Demo video 2 minutes or less (the 1:50 script above)
 - [ ] Commit Fellowship supplemental form submitted
 
 **Judging day**

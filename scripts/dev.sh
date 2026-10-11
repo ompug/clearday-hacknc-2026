@@ -11,6 +11,7 @@
 #   bash scripts/dev.sh e2e [args...]         run scripts/e2e_live_pop.py against the --e2e stack
 #   bash scripts/dev.sh device                run Clearday Home on this laptop (foreground, logs/device.log); issues a device
 #                                             token into device/.env on first run; BULB_DRIVER=homeassistant if HA_* are set
+#   bash scripts/dev.sh warm                  after reset_demo: cache voice audio, forecasts and warm the model
 #   bash scripts/dev.sh rehearse [args...]    pre-demo check: cold start, reset_demo, walk the demo script
 #
 # Normal stack: API :8000 (logs/api.log), web :3001 (logs/web.log), DB from api/.env (DB_TARGET).
@@ -303,11 +304,16 @@ case "$cmd" in
     use_e2e_db
     exec uv run python scripts/e2e_live_pop.py --web "http://localhost:$web_port" "${passthru[@]}"
     ;;
+  warm)
+    running_pid api >/dev/null || die "the stack isn't running: bash scripts/dev.sh up"
+    exec uv run python -m scripts.demo_warm --api "http://localhost:$api_port"
+    ;;
   rehearse)
     # Pre-demo check: cold start (down, up), reset the demo data, then walk docs/06's beats in a browser.
     bash "$0" down || die "couldn't stop the stack"
     bash "$0" up ${db:+--db "$db"} || die "couldn't start the stack"
     uv run python -m scripts.reset_demo || die "demo reset failed"
+    bash "$0" warm || die "demo warm failed"
     uv run python scripts/demo_rehearsal.py --web "http://localhost:$web_port" "${passthru[@]}"
     ;;
   *)
