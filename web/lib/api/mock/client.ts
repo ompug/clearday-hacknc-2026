@@ -376,6 +376,26 @@ export const mockApi: ApiClient = {
       ],
       note: "Invented households only. Share of households with better than even odds of a shortfall in the next 30 days. Used to offer support early, never for credit decisions.",
     }),
+  getFuture: async (req) => {
+    const rates = req?.rates ?? { low: 0.03, mid: 0.06, high: 0.08 };
+    const monthly = req?.monthly_cents ?? 25000;
+    const series = [];
+    const bal = { low: 0, mid: 0, high: 0 };
+    for (let year = 1; year <= 10; year += 1) {
+      for (const k of ["low", "mid", "high"] as const)
+        bal[k] = Math.round((bal[k] + 12 * monthly) * (1 + rates[k]));
+      series.push({ year, low_cents: bal.low, mid_cents: bal.mid, high_cents: bal.high });
+    }
+    return delay({
+      label: "Hypothetical, not investment advice",
+      monthly_surplus_cents: monthly,
+      from_history: req?.monthly_cents === undefined,
+      assumptions: rates,
+      years: 10,
+      series,
+      note: "An educational range for a generic broad index fund, not a prediction and not about any specific investment. Real returns vary and can be negative.",
+    });
+  },
   getRecap: async () =>
     delay({
       week_start: "2026-10-04",

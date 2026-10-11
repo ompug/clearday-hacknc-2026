@@ -500,3 +500,30 @@ export interface RecapResponse {
   audio_url: string | null;
   source: "elevenlabs" | "cache" | "text";
 }
+
+// ---------------------------------------------------------------------------
+// Future view (GET /api/future?low=&mid=&high=&monthly_cents=). Educational only.
+// ---------------------------------------------------------------------------
+
+export interface FutureRates {
+  low: number;
+  mid: number;
+  high: number;
+}
+
+export interface FutureResponse {
+  /** Always "Hypothetical, not investment advice"; the UI shows it next to every number. */
+  label: string;
+  monthly_surplus_cents: Cents;
+  /** False when the user typed a what-if monthly amount. */
+  from_history: boolean;
+  assumptions: FutureRates;
+  years: number;
+  series: { year: number; low_cents: Cents; mid_cents: Cents; high_cents: Cents }[];
+  note: string;
+}
+
+export interface FutureRequest {
+  rates?: FutureRates;
+  monthly_cents?: Cents;
+}

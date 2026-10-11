@@ -14,6 +14,8 @@ import type {
   DuplicateSubscriptionsResponse,
   DemoPersona,
   ForecastResponse,
+  FutureRequest,
+  FutureResponse,
   HouseholdMembersResponse,
   Me,
   PaymentRequest,
@@ -57,6 +59,8 @@ export interface ApiClient {
   getAnalystSegments(): Promise<AnalystSegmentsResponse>;
   /** This week's two-host recap: lines, transcript and optional audio. */
   getRecap(): Promise<RecapResponse>;
+  /** Hypothetical 10-year range for a steady monthly amount, with adjustable return assumptions. */
+  getFuture(req?: FutureRequest): Promise<FutureResponse>;
 }
 
 export type Unsubscribe = () => void;

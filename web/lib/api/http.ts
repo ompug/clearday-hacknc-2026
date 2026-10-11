@@ -15,6 +15,7 @@ import {
   type CreateExpenseResult,
   type DemoPersona,
   type ForecastResponse,
+  type FutureResponse,
   type HouseholdMembersResponse,
   type Me,
   type PaymentRequest,
@@ -82,6 +83,16 @@ export const httpApi: ApiClient = {
     await request("/api/prices/remember", { method: "POST", body: JSON.stringify(req) });
   },
   getAnalystSegments: () => request<AnalystSegmentsResponse>("/api/analyst/segments"),
+  getFuture: (req) => {
+    const q = new URLSearchParams();
+    if (req?.rates) {
+      q.set("low", String(req.rates.low));
+      q.set("mid", String(req.rates.mid));
+      q.set("high", String(req.rates.high));
+    }
+    if (req?.monthly_cents !== undefined) q.set("monthly_cents", String(req.monthly_cents));
+    return request<FutureResponse>(`/api/future${q.size ? `?${q}` : ""}`);
+  },
   getRecap: () => request<RecapResponse>("/api/recap/latest"),
   getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),

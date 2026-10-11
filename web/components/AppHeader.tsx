@@ -7,6 +7,7 @@ import { ClearMark } from "./icons";
 
 /** Secondary pages, in the order they were added. */
 const MORE_LINKS = [
+  { href: "/future", label: "Future view" },
   { href: "/recap", label: "Weekly recap" },
   { href: "/analyst", label: "Analyst view" },
 ];
