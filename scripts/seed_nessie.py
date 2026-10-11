@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 
 from analytics.splits import split
 from api.nessie.client import NessieClient
+from api.nessie.money import CENTS_PER_DOLLAR
 
 log = logging.getLogger("clearday.seed")
 
@@ -274,12 +275,11 @@ def build_plan(anchor: dt.date = ANCHOR, days: int = DAYS, seed: int = 42) -> Pl
             if status == "pending":
                 plan.expenses.append(SharedExpense(label, payee, cents, due))
             elif label == "Rent":
-                repay = (due + dt.timedelta(days=2), cents // len(PEOPLE), "Rent share")
-                _repay(plan, payees, names, *repay)
+                _repay(plan, payees, names, due + dt.timedelta(days=2), cents, "Rent share")
             else:
                 utilities[due.replace(day=22)] += cents
     for day, cents in sorted(utilities.items()):
-        _repay(plan, payees, names, day, cents // len(PEOPLE), "Utilities share")
+        _repay(plan, payees, names, day, cents, "Utilities share")
 
     for p in PEOPLE:
         nickname, payee, cents, dom = PERSONAL_BILLS[p.key]
@@ -311,9 +311,15 @@ def build_plan(anchor: dt.date = ANCHOR, days: int = DAYS, seed: int = 42) -> Pl
     return plan
 
 
-def _repay(plan: Plan, payers: list[str], names: dict, day: dt.date, cents: int, what: str) -> None:
-    """Past repayments to Maya: a transfer out of each roommate plus the matching deposit (no payee field)."""
+def _repay(plan: Plan, payers: list[str], names: dict, day: dt.date, total_cents: int, what: str) -> None:
+    """Past repayments to Maya of each roommate's even share of `total_cents`: a transfer out of each
+    roommate plus the matching deposit (no payee field). Nessie transfers keep whole dollars only, so a
+    share with cents is refused rather than rounded."""
+    shares = split(total_cents, "even", [p.key for p in PEOPLE])
     for who in payers:
+        cents = shares[who]
+        if cents % CENTS_PER_DOLLAR:
+            raise ValueError(f"{what} of {total_cents} cents doesn't split into whole dollars")
         plan.transfers.append(Movement(who, "checking", cents, day, "completed", f"{what} to {names[PAYER]}"))
         plan.deposits.append(
             Movement(PAYER, "checking", cents, day, "completed", f"{what} from {names[who]}")

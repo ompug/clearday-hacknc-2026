@@ -37,6 +37,26 @@ def test_shared_expenses_split_into_whole_dollars():
         assert all(c % 100 == 0 for c in shares.values())
 
 
+def test_past_shared_bills_are_repaid_to_the_cent():
+    """Each completed shared bill: Maya's own share plus both roommates' repayments equals the total."""
+    plan = seed.build_plan()
+    rent = [m.amount_cents for m in plan.transfers if m.description == "Rent share to Maya"]
+    assert rent and all(c == 80_000 for c in rent)  # 240000 / 3
+    utilities = sorted(
+        {(m.date, m.amount_cents) for m in plan.transfers if m.description.startswith("Utilities")}
+    )
+    assert utilities == [(seed.dt.date(2026, 8, 22), 7_100), (seed.dt.date(2026, 9, 22), 6_400)]
+
+
+@pytest.mark.parametrize("total", [10_000, 10_100])
+def test_a_shared_bill_whose_shares_are_not_whole_dollars_is_refused(monkeypatch, total):
+    """Nessie keeps only whole dollars on transfers, so the seed refuses instead of dropping cents."""
+    bills = [("Rent", "Franklin St Apartments", 1, [(seed.dt.date(2026, 9, 1), total, "completed")])]
+    monkeypatch.setattr(seed, "SHARED_BILLS", bills)
+    with pytest.raises(ValueError, match="whole dollars"):
+        seed.build_plan()
+
+
 def test_planted_cases_exist():
     plan = seed.build_plan()
     spotify = {x.person for x in plan.purchases if x.merchant == "Spotify"}
