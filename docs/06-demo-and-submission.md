@@ -59,7 +59,7 @@ Devpost closes at 10:00 AM EST Sunday with no extensions; submit early and keep 
 - [ ] Every teammate has a Devpost account and is added to the project
 - [ ] One submission only, started by one team member
 - [ ] General track selected (or Beginner if more than half the team is new to hackathons)
-- [ ] Tracks opted in: Nessie, ElevenLabs, Tiger Data, Community, Commit
+- [ ] Tracks opted in: Nessie, ElevenLabs, Community, Commit
 - [ ] GitHub link to a public repo with a README (README.md written; confirm the repo is public)
 - [ ] Demo video 2 minutes or less (the 1:50 script above)
 - [ ] Commit Fellowship supplemental form submitted
