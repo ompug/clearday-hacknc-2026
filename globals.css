@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+/*
+ * Clearday palette: Capital One-inspired navy base, sky blues, white glass and a
+ * sparing red. Text on glass is always navy-900 or darker (>= 7:1 on the
+ * 82%-white glass over the darkest sky), white text sits only on navy.
+ */
+@theme {
+  --color-navy-950: #061730;
+  --color-navy-900: #0a2a4f;
+  --color-navy-800: #0e3a6b;
+  --color-navy-700: #154d86;
+  --color-navy-600: #2b5f94;
+  --color-sky-50: #f2faff;
+  --color-sky-100: #e3f4fd;
+  --color-sky-200: #c4e7fa;
+  --color-sky-300: #93d3f4;
+  --color-sky-400: #58b9ea;
+  --color-sky-500: #2898d6;
+  --color-sky-600: #1675b0;
+  --color-alert-600: #c8102e;
+  --color-alert-700: #a20c24;
+  --color-alert-50: #fff1f3;
+
+  --font-sans:
+    "Segoe UI", "Frutiger", "Myriad Pro", "Helvetica Neue", system-ui, -apple-system, "Noto Sans",
+    sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  background-color: #8fd0f2;
+  --focus-ring: #ffffff;
+  --focus-halo: #0a2a4f;
+  --page-bg: #8fd0f2;
+  --page-ink: var(--color-navy-900);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #061730;
+  --page-ink: #eaf8ff;
+}
+
+html {
+  /* Root font-size is set by the text-size control (percent of the browser default). */
+  -webkit-text-size-adjust: 100%;
+  background-color: var(--page-bg);
+}
+
+body {
+  min-height: 100dvh;
+  color: var(--page-ink);
+  background-color: var(--color-navy-900);
+  background-image:
+    radial-gradient(ellipse 38rem 9rem at 12% 78%, rgb(255 255 255 / 0.35), transparent 70%),
+    radial-gradient(ellipse 30rem 7rem at 88% 64%, rgb(255 255 255 / 0.28), transparent 70%),
+    radial-gradient(ellipse 26rem 6rem at 55% 92%, rgb(255 255 255 / 0.4), transparent 70%),
+    linear-gradient(180deg, #0a2a4f 0%, #134f88 34%, #2f8ccc 66%, #8fd0f2 100%);
+  font-family: var(--font-sans);
+}
+
+:root[data-theme="dark"] body {
+  color: var(--page-ink);
+  background-color: #061730;
+  background-image:
+    radial-gradient(ellipse 42rem 10rem at 15% 80%, rgb(136 203 255 / 0.16), transparent 74%),
+    radial-gradient(ellipse 32rem 8rem at 82% 68%, rgb(136 203 255 / 0.12), transparent 70%),
+    linear-gradient(180deg, #061730 0%, #0d223c 30%, #163d5d 52%, #0a1d2f 100%);
+}
+
+/* Visible focus on every surface: white ring plus a navy halo. */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
+}
+
+@layer components {
+  /* White glass panel. Text inside uses navy for AA contrast. */
+  .glass {
+    position: relative;
+    background: rgb(255 255 255 / 0.84);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+    border: 1px solid rgb(255 255 255 / 0.95);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255),
+      0 0.75rem 2rem rgb(6 23 48 / 0.28);
+  }
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 1px 1px 55% 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0));
+    pointer-events: none;
+  }
+  .glass > * {
+    position: relative;
+  }
+
+  /* Glossy navy surface for the header and primary chrome. */
+  .glass-navy {
+    background: linear-gradient(180deg, #164e86 0%, #0a2a4f 55%, #061730 100%);
+    border: 1px solid rgb(255 255 255 / 0.25);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      0 0.5rem 1.5rem rgb(6 23 48 / 0.35);
+    color: #ffffff;
+  }
+
+  /* --- Bubbles ------------------------------------------------------------- */
+
+  .bubble {
+    --b-core: #eef9ff;
+    --b-edge: #7ec8ef;
+    --b-ring: rgb(255 255 255 / 0.9);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: 9999px;
+    border: 0.15rem solid var(--b-ring);
+    background: radial-gradient(
+      circle at 50% 58%,
+      var(--b-core) 0%,
+      var(--b-core) 45%,
+      var(--b-edge) 100%
+    );
+    box-shadow:
+      inset 0 -0.7rem 1.4rem rgb(10 42 79 / 0.18),
+      inset 0 0.5rem 0.9rem rgb(255 255 255 / 0.8),
+      0 0.8rem 1.6rem rgb(6 23 48 / 0.35);
+    color: var(--color-navy-950);
+  }
+  /* Specular highlight. */
+  .bubble::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: 6%;
+    left: 18%;
+    width: 46%;
+    height: 24%;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0));
+    pointer-events: none;
+  }
+  .bubble[data-state="watch"] {
+    --b-core: #f3f6fa;
+    --b-edge: #a4bdd4;
+  }
+  .bubble[data-state="tight"] {
+    --b-core: #ffffff;
+    --b-edge: #b9dcf2;
+    --b-ring: var(--color-alert-600);
+    border-width: 0.25rem;
+  }
+  .bubble[data-state="waiting"] {
+    --b-core: #ffffff;
+    --b-edge: #d8ecf8;
+  }
+  .bubble[data-state="disputed"] {
+    --b-core: #f3f6fa;
+    --b-edge: #b8c6d4;
+    border-style: dashed;
+  }
+  .bubble-fill {
+    position: absolute;
+    z-index: 0;
+    inset: auto 0 0 0;
+    background: linear-gradient(180deg, rgb(147 211 244 / 0.95), rgb(88 185 234 / 0.95));
+    border-top: 0.12rem solid rgb(255 255 255 / 0.9);
+    transition: height 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .bubble-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Bubble buttons get the focus ring hugging the circle. */
+  .bubble:focus-visible {
+    outline-offset: 4px;
+  }
+}
+
+/* --- Motion -------------------------------------------------------------- */
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
