@@ -44,13 +44,18 @@ def main() -> int:
     ap.add_argument("--api", default="http://localhost:8000")
     args = ap.parse_args()
     with connect() as conn:
-        rows = conn.execute("SELECT u.id, u.display_name, m.household_id FROM users u JOIN household_members m ON m.user_id = u.id ORDER BY u.id").fetchall()
+        rows = conn.execute(
+            "SELECT u.id, u.display_name, m.household_id FROM users u "
+            "JOIN household_members m ON m.user_id = u.id ORDER BY u.id"
+        ).fetchall()
         people = {name: (pk, hh) for pk, name, hh in rows}
         t = time.perf_counter()
         print("voice:", ", ".join(warm_voice(conn, people["Maya"][1])), f"({time.perf_counter() - t:.1f}s)")
     with httpx.Client(base_url=args.api, timeout=60) as http:
         for name in ("Priya", "Jake", "Maya"):
-            http.post("/api/dev/login", json={"user_id": ids.encode(ids.USER, people[name][0])}).raise_for_status()
+            http.post(
+                "/api/dev/login", json={"user_id": ids.encode(ids.USER, people[name][0])}
+            ).raise_for_status()
             t = time.perf_counter()
             http.get("/api/sky").raise_for_status()
             http.get("/api/forecast").raise_for_status()
