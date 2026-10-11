@@ -134,11 +134,11 @@ function Future() {
           Year by year ({DISCLAIMER.toLowerCase()})
         </h2>
         {/* A scrollable region must take keyboard focus so it can be scrolled without a mouse. */}
-        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div
           className="mt-3 overflow-x-auto"
           role="region"
           aria-label="Projection table"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
           tabIndex={0}
         >
           <table className="w-full min-w-[28rem] text-left text-navy-950">
