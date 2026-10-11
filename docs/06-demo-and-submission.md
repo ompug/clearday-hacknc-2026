@@ -11,13 +11,13 @@ Setup: laptop runs API, web and DB locally. Record in Chrome device emulation at
 | 0:50 to 1:12 | 40 | Maya: "split last night's pizza with Jake and Priya", Find it, Confirm. If it takes over 4 s, the screen reads "Gemma is reading your purchases"; narrate over it | "I ask Gemma, Google's open model, in plain words. It finds the pizza through narrow tools, the server computes every cent, I confirm, and Jake gets a request bubble." |
 | 1:12 to 1:24 | 25 | Receipt scan (only if time allows; otherwise skip the visuals and say the line over the pizza result) | "Or scan a receipt: items become a split, and the image is deleted after reading." |
 | 1:24 to 1:38 | 30 | Forecast page: duplicate Spotify card | "Clearday spots duplicate subscriptions. One household sharing services means less waste; that is the nudge, not a measured claim." |
-| 1:38 to 1:50 | 35 | `docs/img/design/hardware-vision.png`, then text-size and reduced-motion toggles | "Next is a custom Clearday Home board replacing the laptop. Accessibility is built in: WCAG AA, list view, keyboard, reduced motion and transcripts. Nessie, ElevenLabs, Tiger Data." |
+| 1:38 to 1:50 | 35 | `docs/img/design/hardware-vision.png`, then text-size and reduced-motion toggles | "Next is a custom Clearday Home board replacing the laptop. Accessibility is built in: WCAG AA, list view, keyboard, reduced motion and transcripts. Built on Nessie and ElevenLabs." |
 
 Cut order if over time: receipt first, then the sustainability sentence, then the hardware line. Never cut the live pop, the forecast or accessibility. `bash scripts/dev.sh rehearse` walks these beats in the same order and prints per-beat timings.
 
-Be honest when asked: the forecast, backtest and several analytics modules are stubs returning deterministic data (the ledger math is real); the model is Gemma, not Gemini; everything is hosted locally on the laptop; the Arduino UNO Q build is deferred.
+Be honest when asked: the forecast, detection and backtest are the stats teammate's real models; categorize, prices, cohorts and future are still stubs, and the ledger math is real. The demo branch plants Priya's lower checking balance in our DB so the tight-week case shows; the model is Gemma, not Gemini; everything is hosted locally on the laptop; the Arduino UNO Q build is deferred.
 
-In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each. Judge Q&A still applies.
+In the video, show the Nessie and ElevenLabs names on screen at least once each. Judge Q&A still applies.
 
 ### Opening the mobile app (`/m`)
 
