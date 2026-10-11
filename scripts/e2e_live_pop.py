@@ -1,5 +1,6 @@
-"""Live pop end to end: Maya and Jake in two browser sessions; Jake pops his Rent share and Maya's sky
-updates over Socket.IO without a reload. Screenshots land in logs/e2e/.
+"""Live end to end: Maya and Jake in two browser sessions. Jake pops his Rent share and Maya's sky
+updates over Socket.IO without a reload; then Maya splits a new expense with Jake and his sky gains
+the new shared bubble live. Screenshots land in logs/e2e/.
 
 Needs the API and web running against a seeded DB. Before the browsers start, it runs
 scripts/reset_demo.py on the DB that api.config points at (set DATABASE_URL_LOCAL to the same DB as
@@ -10,8 +11,8 @@ For example (Playwright is a dev dependency; once per machine: uv run playwright
 or by hand against any running stack:
     uv run python scripts/e2e_live_pop.py --web http://localhost:3001
 
-Exits non-zero if Jake's Rent share isn't open, the pop fails, or Maya's view doesn't update within
-the timeout.
+Exits non-zero if Jake's Rent share isn't open, the pop fails, the split fails, or the other
+person's view doesn't update within the timeout.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ import argparse
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
@@ -90,7 +92,23 @@ def main() -> int:
         expect(maya_rent).not_to_have_text(before, timeout=LIVE_TIMEOUT_MS)
         after = maya_rent.inner_text()
         shot(maya, maya_rent, "4-maya-after-live-update.png")
-        print(f"Maya before: {before!r}\nMaya after:  {after!r}\nScreenshots: {OUT}")
+        print(f"Maya before: {before!r}\nMaya after:  {after!r}")
+
+        # Maya splits a new expense with Jake; Jake's sky must gain the bubble without a reload.
+        label = f"Pizza night {int(time.time()) % 100000}"
+        jake_new = jake.get_by_role("button", name=re.compile(rf"^{re.escape(label)}\b"))
+        expect(jake_new).to_have_count(0)
+        maya.get_by_role("button", name="New shared expense").click()
+        dialog = maya.get_by_role("dialog", name="New shared expense")
+        dialog.get_by_label("What was it for?").fill(label)
+        dialog.get_by_label("Total you paid").fill("30.00")
+        dialog.get_by_label(re.compile(r"Priya")).uncheck()
+        shot(maya, dialog, "5-maya-split-dialog.png")
+        dialog.get_by_role("button", name=re.compile(r"^Split with 1 roommate")).click()
+        expect(dialog).to_be_hidden(timeout=LIVE_TIMEOUT_MS)
+        expect(jake_new.first).to_be_visible(timeout=LIVE_TIMEOUT_MS)
+        shot(jake, jake_new.first, "6-jake-after-live-split.png")
+        print(f"Jake's sky gained {jake_new.first.inner_text().splitlines()[:2]!r}\nScreenshots: {OUT}")
         browser.close()
     return 0
 
