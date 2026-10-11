@@ -250,8 +250,8 @@ export interface CreateExpenseResult {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/forecast (Stream B draft from the spec's Analytics contracts, `forecast.py`;
-// Stream C owns the endpoint and may refine this block)
+// GET /api/forecast: the spec's Analytics contract (`forecast.py`) output for the
+// signed-in user, plus `as_of`, `threshold_cents` and each bill's bubble link and weather.
 // ---------------------------------------------------------------------------
 
 export interface ForecastDay {
@@ -268,6 +268,18 @@ export interface ForecastBill {
   amount_cents: Cents;
   /** Chance the balance is below the safety threshold before this bill. */
   p_short: number;
+  /** The sky bubble this bill belongs to (null if it has none). */
+  bubble_id: string | null;
+  /** Colour bucket for `p_short`, same rule as `SkyBubble.weather`. */
+  weather: Weather;
+}
+
+export interface ForecastScenarioBill {
+  label: string;
+  date: IsoDate;
+  p_short: number;
+  bubble_id: string | null;
+  weather: Weather;
 }
 
 export interface ForecastDriver {
@@ -276,6 +288,9 @@ export interface ForecastDriver {
 }
 
 export interface ForecastResponse {
+  as_of: IsoDateTime;
+  /** Safety threshold the chances are measured against (default $50). */
+  threshold_cents: Cents;
   days: ForecastDay[];
   bills: ForecastBill[];
   safe_to_spend_cents: Cents;
@@ -285,6 +300,6 @@ export interface ForecastResponse {
   /** The same month with "want" spending trimmed by 25%. */
   wants_trimmed: {
     safe_to_spend_cents: Cents;
-    bills: { label: string; date: IsoDate; p_short: number }[];
+    bills: ForecastScenarioBill[];
   };
 }
