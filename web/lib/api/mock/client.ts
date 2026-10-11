@@ -3,11 +3,13 @@
  * tab (a reload resets the demo); the chosen persona is kept in localStorage to
  * stand in for the session cookie.
  */
-import { addDays, todayIso } from "../../dates";
+import { addDays, daysBetween, todayIso } from "../../dates";
 import type { ApiClient, RealtimeClient } from "../client";
 import {
   ApiError,
   type Account,
+  type CreateExpenseRequest,
+  type CreateExpenseResult,
   type Me,
   type PaymentRequest,
   type PaymentResult,
@@ -26,6 +28,7 @@ import {
   initialAccounts,
   initialBills,
   initialExpenses,
+  splitEven,
   type MockExpense,
 } from "./data";
 
@@ -38,6 +41,8 @@ const state = {
   accounts: initialAccounts(),
   payments: new Map<string, PaymentResult>(),
   nextPaymentId: 1,
+  createdExpenses: new Map<string, CreateExpenseResult>(),
+  nextExpenseId: 1,
 };
 
 function delay<T>(value: T): Promise<T> {
@@ -285,4 +290,95 @@ export const mockApi: ApiClient = {
     const userId = requireUser();
     return delay(pay(userId, req));
   },
+  listHouseholdMembers: async () => {
+    requireUser();
+    return delay({
+      members: PERSONAS.map((p) => ({ user_id: p.user_id, display_name: p.display_name })),
+    });
+  },
+  createExpense: async (req) => {
+    const userId = requireUser();
+    return delay(createExpense(userId, req));
+  },
 };
+
+// --- Shared expenses (mirrors POST /api/expenses) ---------------------------
+
+function createExpense(userId: string, req: CreateExpenseRequest): CreateExpenseResult {
+  const replay = state.createdExpenses.get(req.idempotency_key);
+  if (replay) return replay;
+
+  const label = req.label.trim();
+  if (label.length < 1 || label.length > 80)
+    throw new ApiError(422, "Label must be 1-80 characters");
+  if (!Number.isInteger(req.total_cents) || req.total_cents <= 0)
+    throw new ApiError(422, "total_cents must be positive integer cents");
+  const ids = req.participants.map((p) => p.user_id);
+  if (new Set(ids).size !== ids.length) throw new ApiError(422, "Participants must be unique");
+  if (ids.some((id) => !PERSONAS.some((p) => p.user_id === id)))
+    throw new ApiError(422, "Participants must be household members");
+  if (!ids.some((id) => id !== userId))
+    throw new ApiError(422, "Add at least one roommate besides you");
+
+  let amounts: Map<string, number>;
+  if (req.split_method === "even") {
+    amounts = splitEven(req.total_cents, ids);
+  } else if (req.split_method === "custom") {
+    amounts = new Map();
+    for (const p of req.participants) {
+      if (!Number.isInteger(p.amount_cents) || (p.amount_cents ?? -1) < 0)
+        throw new ApiError(422, "Custom amounts must be non-negative integer cents");
+      amounts.set(p.user_id, p.amount_cents ?? 0);
+    }
+    const sum = [...amounts.values()].reduce((a, b) => a + b, 0);
+    if (sum !== req.total_cents) throw new ApiError(422, "Custom amounts must add up to the total");
+  } else {
+    throw new ApiError(422, "Unknown split method");
+  }
+
+  const today = todayIso();
+  const dueDate = req.due_date ?? today;
+  const expense_id = `exp_new${state.nextExpenseId++}`;
+  const shares = [...ids].sort().map((user_id) => ({
+    share_id: `sh_${expense_id.slice(4)}_${user_id.slice(2)}`,
+    user_id,
+    amount_cents: amounts.get(user_id) ?? 0,
+    status: (user_id === userId ? "paid" : "open") as "paid" | "open",
+  }));
+  const expense: MockExpense = {
+    expense_id,
+    label,
+    total_cents: req.total_cents,
+    due_offset_days: daysBetween(today, dueDate),
+    necessity: "need",
+    shares,
+  };
+  state.expenses.push(expense);
+
+  const result: CreateExpenseResult = {
+    expense_id,
+    label,
+    total_cents: req.total_cents,
+    split_method: req.split_method,
+    due_date: dueDate,
+    payer_id: userId,
+    shares: shares.map((s) => ({ ...s })),
+  };
+  state.createdExpenses.set(req.idempotency_key, result);
+
+  const { fill } = fillOf(expense);
+  for (const s of shares)
+    emit("share.updated", {
+      expense_id,
+      share_id: s.share_id,
+      status: s.status,
+      fill_fraction: fill,
+    });
+  const actor = PERSONAS.find((p) => p.user_id === userId)?.display_name ?? "Roommate";
+  emit("feed.created", {
+    type: "expense_created",
+    actor_display_name: actor,
+    subject_label: label,
+  });
+  return result;
+}

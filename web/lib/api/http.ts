@@ -2,7 +2,10 @@ import type { ApiClient } from "./client";
 import {
   ApiError,
   type AccountsResponse,
+  type CreateExpenseRequest,
+  type CreateExpenseResult,
   type DemoPersona,
+  type HouseholdMembersResponse,
   type Me,
   type PaymentRequest,
   type PaymentResult,
@@ -51,4 +54,7 @@ export const httpApi: ApiClient = {
   getAccounts: () => request<AccountsResponse>("/api/accounts"),
   pay: (body: PaymentRequest) =>
     request<PaymentResult>("/api/payments", { method: "POST", body: JSON.stringify(body) }),
+  listHouseholdMembers: () => request<HouseholdMembersResponse>("/api/household/members"),
+  createExpense: (body: CreateExpenseRequest) =>
+    request<CreateExpenseResult>("/api/expenses", { method: "POST", body: JSON.stringify(body) }),
 };

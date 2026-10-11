@@ -1,6 +1,9 @@
 import type {
   AccountsResponse,
+  CreateExpenseRequest,
+  CreateExpenseResult,
   DemoPersona,
+  HouseholdMembersResponse,
   Me,
   PaymentRequest,
   PaymentResult,
@@ -24,6 +27,8 @@ export interface ApiClient {
   getSky(): Promise<SkyResponse>;
   getAccounts(): Promise<AccountsResponse>;
   pay(request: PaymentRequest): Promise<PaymentResult>;
+  listHouseholdMembers(): Promise<HouseholdMembersResponse>;
+  createExpense(request: CreateExpenseRequest): Promise<CreateExpenseResult>;
 }
 
 export type Unsubscribe = () => void;

@@ -186,3 +186,105 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
+
+// ---------------------------------------------------------------------------
+// POST /api/expenses (create a shared expense with a split)
+// GET /api/household/members (who can be in a split)
+// ---------------------------------------------------------------------------
+
+export interface HouseholdMember {
+  user_id: string;
+  display_name: string;
+}
+
+export interface HouseholdMembersResponse {
+  members: HouseholdMember[];
+}
+
+/** Phase 2 offers even and custom splits only (itemized waits for receipts). */
+export type SplitMethod = "even" | "custom";
+
+export interface ExpenseParticipant {
+  user_id: string;
+  /** Required for `custom` (all amounts must sum to `total_cents`); omit for `even`. */
+  amount_cents?: Cents;
+}
+
+/**
+ * The payer is always the signed-in user (session cookie), never a body field.
+ * The payer may be a participant: their own share is created already `paid`.
+ * At least one participant other than the payer is required. Ledger-only: no
+ * money moves until someone pops their share.
+ */
+export interface CreateExpenseRequest {
+  /** Client-generated (crypto.randomUUID); a replay returns the original result. */
+  idempotency_key: string;
+  /** 1..80 chars, untrusted text. */
+  label: string;
+  /** Positive integer cents. */
+  total_cents: Cents;
+  split_method: SplitMethod;
+  /** Unique household members. */
+  participants: ExpenseParticipant[];
+  /** Defaults to today when omitted or null. */
+  due_date?: IsoDate | null;
+}
+
+export interface ExpenseShare {
+  share_id: string;
+  user_id: string;
+  amount_cents: Cents;
+  status: ShareStatus;
+}
+
+export interface CreateExpenseResult {
+  /** Also the shared bubble's `bubble_id` in `/api/sky`. */
+  expense_id: string;
+  label: string;
+  total_cents: Cents;
+  split_method: SplitMethod;
+  due_date: IsoDate;
+  payer_id: string;
+  /** Sorted by user_id; amounts always sum to `total_cents`. */
+  shares: ExpenseShare[];
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/forecast (Stream B draft from the spec's Analytics contracts, `forecast.py`;
+// Stream C owns the endpoint and may refine this block)
+// ---------------------------------------------------------------------------
+
+export interface ForecastDay {
+  date: IsoDate;
+  /** Pessimistic, typical and hopeful balance paths. UI copy never says "P10". */
+  p10_cents: Cents;
+  p50_cents: Cents;
+  p90_cents: Cents;
+}
+
+export interface ForecastBill {
+  label: string;
+  date: IsoDate;
+  amount_cents: Cents;
+  /** Chance the balance is below the safety threshold before this bill. */
+  p_short: number;
+}
+
+export interface ForecastDriver {
+  category: string;
+  share_of_variance: number;
+}
+
+export interface ForecastResponse {
+  days: ForecastDay[];
+  bills: ForecastBill[];
+  safe_to_spend_cents: Cents;
+  /** Null when no paycheck lands inside the horizon. */
+  next_payday: IsoDate | null;
+  drivers: ForecastDriver[];
+  /** The same month with "want" spending trimmed by 25%. */
+  wants_trimmed: {
+    safe_to_spend_cents: Cents;
+    bills: { label: string; date: IsoDate; p_short: number }[];
+  };
+}
