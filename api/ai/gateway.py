@@ -73,8 +73,9 @@ class LLMClient:
     timeout_s: float
     transport: httpx.BaseTransport | None = None
 
-    def chat(self, messages: list[dict], timeout_s: float) -> dict:
-        """One chat-completions call with the contract tools; returns the assistant message."""
+    def chat(self, messages: list[dict], timeout_s: float, *, with_tools: bool = True) -> dict:
+        """One chat-completions call; returns the assistant message. `with_tools=False` (the receipt
+        reader) offers no tools at all, so text in an image can never select an action."""
         if timeout_s <= 0:
             raise ModelUnavailable("timeout")
         try:
@@ -85,8 +86,7 @@ class LLMClient:
                     json={
                         "model": self.model,
                         "messages": messages,
-                        "tools": tools.SPECS,
-                        "tool_choice": "auto",
+                        **({"tools": tools.SPECS, "tool_choice": "auto"} if with_tools else {}),
                         "temperature": 0,
                     },
                 )

@@ -15,6 +15,7 @@ import {
   type Me,
   type PaymentRequest,
   type PaymentResult,
+  type ReceiptReadResult,
   type SkyResponse,
 } from "./types";
 
@@ -55,6 +56,16 @@ export const httpApi: ApiClient = {
       if (error instanceof ApiError && error.status === 401) return null;
       throw error;
     }
+  },
+  readReceipt: async (file) => {
+    const response = await fetch(`${BASE_URL}/api/receipts`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new ApiError(response.status, "POST /api/receipts failed");
+    return (await response.json()) as ReceiptReadResult;
   },
   getAnnouncement: () => request<AnnouncementResponse>("/api/voice/announcement"),
   getDuplicateSubscriptions: () =>

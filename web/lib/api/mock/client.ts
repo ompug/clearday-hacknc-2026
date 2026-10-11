@@ -310,6 +310,22 @@ export const mockApi: ApiClient = {
     return delay(createExpense(userId, req));
   },
   getForecast: async () => delay(buildForecast(requireUser())),
+  readReceipt: async () => {
+    requireUser();
+    return delay({
+      merchant: "Sunny Slice Pizzeria",
+      date: todayIso(),
+      items: [
+        { label: "Large Pepperoni", amount_cents: 1850 },
+        { label: "Garden Salad", amount_cents: 725 },
+        { label: "Garlic Knots", amount_cents: 500 },
+        { label: "Lemonade x2", amount_cents: 600 },
+      ],
+      tax_cents: 257,
+      tip_cents: 700,
+      total_cents: 4632,
+    });
+  },
   getAnnouncement: async () =>
     delay({
       text: "A shared bill just cleared. Every shared bill is covered. Skies look clear this week.",

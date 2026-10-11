@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ApiError,
   api,
@@ -12,17 +12,24 @@ import {
 import { addDays, todayIso } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { CheckIcon, CloseIcon, FlagIcon } from "../icons";
-import { centsToInput, parseDollarsToCents, previewEvenSplit } from "./cents";
+import { centsToInput, parseDollarsToCents, previewEvenSplit, previewItemizedSplit } from "./cents";
+import { ItemizedPanel, newItem, type DraftItem } from "./ItemizedPanel";
 
 const LABEL_MAX = 80;
+
+/** The dialog's own method list: itemized is built here and submitted as `custom` amounts. */
+type UiMethod = SplitMethod | "itemized";
 
 interface Draft {
   label: string;
   total: string;
   dueDate: string;
-  method: SplitMethod;
+  method: UiMethod;
   participants: string[];
   custom: Record<string, string>;
+  items: DraftItem[];
+  tax: string;
+  tip: string;
 }
 
 function freshDraft(members: HouseholdMember[]): Draft {
@@ -33,6 +40,9 @@ function freshDraft(members: HouseholdMember[]): Draft {
     method: "even",
     participants: members.map((m) => m.user_id),
     custom: {},
+    items: [],
+    tax: "",
+    tip: "",
   };
 }
 
@@ -94,22 +104,47 @@ export function NewExpenseDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const totalCents = parseDollarsToCents(draft.total);
+  const itemized = draft.method === "itemized";
+  const chosenIds = draft.participants;
+  const itemCents = draft.items.map((i) => parseDollarsToCents(i.amount));
+  const taxCents = draft.tax.trim() === "" ? 0 : parseDollarsToCents(draft.tax);
+  const tipCents = draft.tip.trim() === "" ? 0 : parseDollarsToCents(draft.tip);
+  const itemizedTotal =
+    itemCents.every((c) => c !== null) && taxCents !== null && tipCents !== null
+      ? itemCents.reduce<number>((sum, c) => sum + (c ?? 0), 0) + taxCents + tipCents
+      : null;
+  const totalCents = itemized ? itemizedTotal : parseDollarsToCents(draft.total);
   const chosen = members.filter((m) => draft.participants.includes(m.user_id));
   const others = chosen.filter((m) => m.user_id !== meId);
 
-  const shares = useMemo(() => {
+  const shares = (() => {
     const map = new Map<string, Cents | null>();
-    if (draft.method === "even") {
+    if (draft.method === "itemized") {
+      const lines = draft.items.map((i, n) => ({
+        amount_cents: itemCents[n] ?? 0,
+        user_ids: i.assignees,
+      }));
+      const split = previewItemizedSplit(lines, taxCents ?? 0, tipCents ?? 0, chosenIds);
+      for (const id of chosenIds) map.set(id, itemizedTotal === null ? null : split.get(id)!);
+    } else if (draft.method === "even") {
       const even = previewEvenSplit(totalCents ?? 0, draft.participants);
       for (const id of draft.participants) map.set(id, totalCents === null ? null : even.get(id)!);
     } else {
       for (const id of draft.participants) map.set(id, parseDollarsToCents(draft.custom[id] ?? ""));
     }
     return map;
-  }, [draft.method, draft.participants, draft.custom, totalCents]);
+  })();
 
   const customValues = [...shares.values()];
+  const itemErrors = draft.items.map((i, n) =>
+    i.label.trim() === ""
+      ? "Name this item."
+      : itemCents[n] === null || itemCents[n] === 0
+        ? "Enter its price, like 4.50."
+        : !i.assignees.some((a) => draft.participants.includes(a))
+          ? "Tick at least one person who shared it."
+          : null,
+  );
   const customComplete = customValues.every((v) => v !== null);
   const assigned = customValues.reduce<number>((sum, v) => sum + (v ?? 0), 0);
   const remaining = (totalCents ?? 0) - assigned;
@@ -124,6 +159,13 @@ export function NewExpenseDialog({
           ? "That's more than this app handles."
           : null,
     participants: others.length === 0 ? "Pick at least one roommate to split with." : null,
+    items: !itemized
+      ? null
+      : draft.items.length === 0
+        ? "Add at least one item, or scan a receipt."
+        : itemErrors.some((e) => e !== null) || taxCents === null || tipCents === null
+          ? "Fix the highlighted items, tax or tip."
+          : null,
     custom:
       draft.method !== "custom" || totalCents === null
         ? null
@@ -150,8 +192,11 @@ export function NewExpenseDialog({
     }));
   }
 
-  function chooseMethod(method: SplitMethod) {
+  function chooseMethod(method: UiMethod) {
     setDraft((d) => {
+      if (method === "itemized" && d.items.length === 0) {
+        return { ...d, method, items: [newItem(d.participants)] };
+      }
       if (method === "custom" && totalCents !== null) {
         // Start custom from the even split so the sum already matches.
         const even = previewEvenSplit(totalCents, d.participants);
@@ -181,9 +226,9 @@ export function NewExpenseDialog({
         idempotency_key: idempotencyKey,
         label: draft.label.trim(),
         total_cents: totalCents,
-        split_method: draft.method,
+        split_method: draft.method === "itemized" ? "custom" : draft.method,
         participants: draft.participants.map((user_id) =>
-          draft.method === "custom"
+          draft.method !== "even"
             ? { user_id, amount_cents: shares.get(user_id) ?? 0 }
             : { user_id },
         ),
@@ -262,7 +307,7 @@ export function NewExpenseDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${uid}-total`} className="font-semibold">
-                Total you paid
+                {itemized ? "Total (items + tax + tip)" : "Total you paid"}
               </label>
               <div className="relative">
                 <span
@@ -277,7 +322,10 @@ export function NewExpenseDialog({
                   inputMode="decimal"
                   autoComplete="off"
                   placeholder="0.00"
-                  value={draft.total}
+                  value={
+                    itemized ? (totalCents === null ? "" : centsToInput(totalCents)) : draft.total
+                  }
+                  readOnly={itemized}
                   onChange={(e) => update({ total: e.target.value })}
                   aria-invalid={err("total") ? true : undefined}
                   aria-describedby={err("total") ? `${uid}-total-err` : undefined}
@@ -337,11 +385,12 @@ export function NewExpenseDialog({
 
           <fieldset className="flex flex-col gap-3">
             <legend className="font-semibold">How to split it</legend>
-            <div className="mt-1 grid grid-cols-2 gap-2">
+            <div className="mt-1 grid gap-2 sm:grid-cols-3">
               {(
                 [
                   ["even", "Evenly"],
                   ["custom", "Custom amounts"],
+                  ["itemized", "By item"],
                 ] as const
               ).map(([id, text]) => (
                 <label
@@ -361,6 +410,29 @@ export function NewExpenseDialog({
               ))}
             </div>
 
+            {itemized ? (
+              <>
+                <ItemizedPanel
+                  people={chosen}
+                  meId={meId}
+                  items={draft.items}
+                  tax={draft.tax}
+                  tip={draft.tip}
+                  itemErrors={itemErrors.map((e) => (showErrors ? e : null))}
+                  onItems={(items) => update({ items })}
+                  onTax={(tax) => update({ tax })}
+                  onTip={(tip) => update({ tip })}
+                  onMerchant={(merchant) =>
+                    setDraft((d) =>
+                      d.label.trim() ? d : { ...d, label: merchant.slice(0, LABEL_MAX) },
+                    )
+                  }
+                  fieldClass={fieldClass}
+                />
+                <FieldError id={`${uid}-items-err`} message={err("items")} />
+              </>
+            ) : null}
+
             <ul aria-label="Shares" className="flex flex-col gap-2">
               {chosen.map((m) => {
                 const isMe = m.user_id === meId;
@@ -377,7 +449,7 @@ export function NewExpenseDialog({
                         {isMe ? "Already paid (you paid the store)" : "Gets a bubble to pop"}
                       </span>
                     </span>
-                    {draft.method === "even" ? (
+                    {draft.method !== "custom" ? (
                       <span className="font-bold tabular-nums">
                         {share === null ? "—" : formatCents(share)}
                       </span>
@@ -409,6 +481,13 @@ export function NewExpenseDialog({
                 );
               })}
             </ul>
+
+            {itemized && totalCents !== null && totalCents > 0 ? (
+              <SumCheck
+                ok
+                text={`Shares add up to ${formatCents(totalCents)}, tax and tip included.`}
+              />
+            ) : null}
 
             {draft.method === "custom" && totalCents !== null && totalCents > 0 ? (
               <SumCheck

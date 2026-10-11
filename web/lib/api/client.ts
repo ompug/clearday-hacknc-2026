@@ -12,6 +12,7 @@ import type {
   HouseholdMembersResponse,
   Me,
   PaymentRequest,
+  ReceiptReadResult,
   PaymentResult,
   RealtimeEventName,
   RealtimeEvents,
@@ -40,6 +41,8 @@ export interface ApiClient {
   askAssistant(request: AssistantRequest): Promise<AssistantResponse>;
   /** Spoken household announcement for a cleared shared bill: transcript plus optional audio. */
   getAnnouncement(): Promise<AnnouncementResponse>;
+  /** Reads a receipt image into line items to confirm; the server deletes the image after. */
+  readReceipt(file: File): Promise<ReceiptReadResult>;
   getDuplicateSubscriptions(): Promise<DuplicateSubscriptionsResponse>;
   getBacktest(): Promise<BacktestSummary>;
 }

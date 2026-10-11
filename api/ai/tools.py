@@ -266,7 +266,7 @@ def explain_anomaly(ctx: Context, args: dict) -> tuple[dict, list[str], int]:
 
 
 def read_receipt(ctx: Context, args: dict) -> tuple[dict, list[str], int]:
-    raise ToolRejected("no_receipt")  # receipt upload is not built; nothing was just uploaded
+    raise ToolRejected("no_receipt")  # chat has no image; receipts go through api.ai.receipts
 
 
 HANDLERS = {

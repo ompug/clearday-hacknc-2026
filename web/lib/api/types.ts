@@ -207,7 +207,10 @@ export interface HouseholdMembersResponse {
   members: HouseholdMember[];
 }
 
-/** Phase 2 offers even and custom splits only (itemized waits for receipts). */
+/**
+ * The expenses contract offers even and custom splits only. An itemized split is built in the
+ * dialog (analytics.splits rules) and submitted as `custom` with each person's total.
+ */
 export type SplitMethod = "even" | "custom";
 
 export interface ExpenseParticipant {
@@ -343,6 +346,30 @@ export interface AssistantResponse {
   /** "template" when the model was slow, rate-limited or unavailable. */
   source: "model" | "template";
   proposal: AssistantSplitProposal | null;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/receipts: raw image body (image/png, image/jpeg or image/webp, at most 5 MB).
+// Returns line items for the user to confirm; nothing is saved and the image is deleted
+// right after extraction. 503 = the reader is unavailable, 422 = couldn't read it or the
+// items didn't add up, 413/415 = too big or wrong type: in every case enter items by hand.
+// ---------------------------------------------------------------------------
+
+export interface ReceiptLineItem {
+  /** Untrusted text from the receipt; render as text only. */
+  label: string;
+  amount_cents: Cents;
+}
+
+export interface ReceiptReadResult {
+  /** Untrusted text; render as text only. */
+  merchant: string;
+  date: IsoDate | null;
+  items: ReceiptLineItem[];
+  tax_cents: Cents;
+  tip_cents: Cents;
+  /** Always equals the items plus tax plus tip. */
+  total_cents: Cents;
 }
 
 // ---------------------------------------------------------------------------

@@ -38,3 +38,60 @@ export function previewEvenSplit(totalCents: Cents, userIds: string[]): Map<stri
   }
   return result;
 }
+
+export interface ItemizedLine {
+  amount_cents: Cents;
+  /** Who shares this item; each owner pays an equal part. */
+  user_ids: string[];
+}
+
+/** `total` divided in proportion to integer `weights`, largest remainder, ties by user ID. */
+function largestRemainder(total: Cents, weights: Map<string, number>): Map<string, Cents> {
+  const ids = [...weights.keys()].sort();
+  const weightSum = ids.reduce((s, id) => s + weights.get(id)!, 0);
+  const base = new Map<string, Cents>();
+  const rest = new Map<string, number>();
+  for (const id of ids) {
+    const product = total * weights.get(id)!;
+    base.set(id, Math.floor(product / weightSum));
+    rest.set(id, product % weightSum);
+  }
+  let leftover = total - [...base.values()].reduce((s, v) => s + v, 0);
+  for (const id of [...ids].sort((a, b) => rest.get(b)! - rest.get(a)! || (a < b ? -1 : 1))) {
+    if (leftover <= 0) break;
+    base.set(id, base.get(id)! + 1);
+    leftover -= 1;
+  }
+  return base;
+}
+
+/**
+ * Itemized preview, the same rules as `analytics.splits` (items split evenly among their owners;
+ * tax and tip follow each person's item subtotal). The server stores the per-person totals as a
+ * custom split and checks they add up.
+ */
+export function previewItemizedSplit(
+  items: ItemizedLine[],
+  taxCents: Cents,
+  tipCents: Cents,
+  userIds: string[],
+): Map<string, Cents> {
+  const result = new Map<string, Cents>(userIds.map((id) => [id, 0]));
+  for (const item of items) {
+    const owners = new Map(item.user_ids.filter((id) => result.has(id)).map((id) => [id, 1]));
+    if (owners.size === 0) continue;
+    for (const [id, cents] of largestRemainder(item.amount_cents, owners)) {
+      result.set(id, result.get(id)! + cents);
+    }
+  }
+  const subtotals = new Map(result);
+  const anySubtotal = [...subtotals.values()].some((v) => v > 0);
+  const basis = anySubtotal ? subtotals : new Map(userIds.map((id) => [id, 1]));
+  if (basis.size === 0) return result;
+  for (const extra of [taxCents, tipCents]) {
+    for (const [id, cents] of largestRemainder(extra, basis)) {
+      result.set(id, result.get(id)! + cents);
+    }
+  }
+  return result;
+}
