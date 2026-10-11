@@ -204,7 +204,7 @@ def _pop_bill(conn, user: CurrentUser, key: str, bubble_id: str, account_id: str
     txn_id = ids.decode(ids.BILL, bubble_id)
     with conn.transaction():
         row = conn.execute(
-            """SELECT t.amount_cents, t.merchant FROM transactions t
+            """SELECT t.amount_cents, t.merchant, t.account_id FROM transactions t
                WHERE t.id = %s AND t.user_id = %s AND t.kind = 'bill' AND t.status = 'pending'
                  AND NOT EXISTS (SELECT 1 FROM expenses e WHERE e.source_txn_id = t.id)
                FOR UPDATE""",
@@ -215,6 +215,8 @@ def _pop_bill(conn, user: CurrentUser, key: str, bubble_id: str, account_id: str
         if amount != row[0]:
             raise PaymentError(409, "Amount changed")
         paying_account = _user_account(conn, user.user_id, account_id)
+        if paying_account != row[2]:  # posting the bill debits its own account, so pay from that one
+            raise PaymentError(409, "Pay this bill from the account it's billed to")
         payment_id = ledger.insert_payment(
             conn,
             idempotency_key=key,

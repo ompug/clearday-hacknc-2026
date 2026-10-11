@@ -126,7 +126,7 @@ def open_household_shares(conn, household_id: int) -> list[ShareRow]:
 
 # The bill's nickname ("Phone") lives on the cached Nessie bill, not on the payee ("Carolina Wireless").
 PERSONAL_BILLS_SQL = """
-SELECT t.id, nb.nickname, t.occurred_at::date, t.amount_cents, COALESCE(t.category, 'other')
+SELECT t.id, nb.nickname, t.occurred_at::date, t.amount_cents, COALESCE(t.category, 'other'), t.account_id
 FROM transactions t
 LEFT JOIN LATERAL (
     SELECT b ->> 'nickname' AS nickname
@@ -150,6 +150,7 @@ class PersonalBill:
     due_on: dt.date
     amount_cents: int
     category: str
+    account_id: int  # the bill posts on this account, so it's the only one it can be paid from
 
     @property
     def label(self) -> str:
@@ -390,7 +391,11 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
                 "kind": "shared",
                 "label": s.label,
                 "due_date": s.due_on.isoformat(),
-                "your_share_cents": s.amount_cents,
+                # An unpaid share shows what's left to pay (a partial share's remainder), which is the
+                # amount POST /api/payments accepts. A paid share shows the whole share.
+                "your_share_cents": s.amount_cents
+                if s.status == "paid"
+                else s.amount_cents - s.allocated_cents,
                 "total_cents": s.total_cents,
                 "status": s.status,
                 "fill_fraction": round(s.paid_cents / s.total_cents, 4),  # display ratio, not money
@@ -431,7 +436,13 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
     for b in personal_bills(conn, user.user_id):
         categories.append(b.category)
         bubbles.append(
-            solo(ids.encode(ids.BILL, b.txn_id), b.label, b.due_on, b.amount_cents, default_account)
+            solo(
+                ids.encode(ids.BILL, b.txn_id),
+                b.label,
+                b.due_on,
+                b.amount_cents,
+                ids.encode(ids.ACCOUNT, b.account_id),
+            )  # fmt: skip
         )
 
     subs = upcoming_subscriptions(conn, user.user_id, start)
@@ -468,22 +479,48 @@ def build_sky(conn, user: CurrentUser) -> dict[str, Any]:
     }
 
 
-def household_status(conn, user: CurrentUser) -> dict[str, Any]:
+def _household_weather(conn, household_id: int, shares: list[ShareRow], start: dt.date) -> str:
+    """ "tight" if any member's open share is likely to come up short, else "clear"."""
+    for s in shares:
+        if s.status == "paid":
+            continue
+        member_fc = user_forecast(conn, s.user_id, household_id, start)
+        if member_fc.p_short(ids.encode(ids.EXPENSE, s.expense_id)) >= TIGHT_P:
+            return "tight"
+    return "clear"
+
+
+def household_status(conn, household_id: int) -> dict[str, Any]:
     """Household-level counts only: no amounts, no names, no per-person data (Clearday Home reads this)."""
     start = today()
-    shares = open_household_shares(conn, user.household_id)
+    shares = open_household_shares(conn, household_id)
     expenses: dict[int, ShareRow] = {s.expense_id: s for s in shares}
-    tight = False
-    for s in shares:
-        if s.status == "paid" or tight:
-            continue
-        member_fc = user_forecast(conn, s.user_id, user.household_id, start)
-        tight = member_fc.p_short(ids.encode(ids.EXPENSE, s.expense_id)) >= TIGHT_P
     soon = start + dt.timedelta(days=DUE_SOON_DAYS)
     return {
-        "weather": "tight" if tight else "clear",
+        "weather": _household_weather(conn, household_id, shares, start),
         "open_bills": len(expenses),
         "due_soon_bills": sum(1 for e in expenses.values() if e.due_on <= soon),
         "shares_paid": sum(e.paid_count for e in expenses.values()),
         "shares_total": sum(e.participants for e in expenses.values()),
+    }
+
+
+def device_summary(conn, household_id: int) -> dict[str, Any]:
+    """The narrator summary for Clearday Home: weather plus each open shared bill's label and share
+    progress. No amounts, no names, no per-person data. Overdue bills report due_in_days 0."""
+    start = today()
+    shares = open_household_shares(conn, household_id)
+    expenses: dict[int, ShareRow] = {s.expense_id: s for s in shares}
+    return {
+        "weather": _household_weather(conn, household_id, shares, start),
+        "open_bills": len(expenses),
+        "bills": [
+            {
+                "label": display_text(e.label, "Bill"),
+                "shares_paid": e.paid_count,
+                "shares_total": e.participants,
+                "due_in_days": max(0, (e.due_on - start).days),
+            }
+            for e in expenses.values()
+        ],
     }

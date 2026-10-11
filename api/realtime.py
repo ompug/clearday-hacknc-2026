@@ -11,7 +11,6 @@ longer resolves to the same rooms (logged out, expired, left the household, revo
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 from dataclasses import dataclass
 from http.cookies import SimpleCookie
@@ -20,6 +19,7 @@ import socketio
 
 from api.config import get_settings
 from api.db import connect
+from api.devices import device_household, hash_device_token  # noqa: F401  (re-exported for callers)
 from api.session import COOKIE_NAME, session_member
 
 log = logging.getLogger("clearday.realtime")
@@ -48,10 +48,6 @@ class Emit:
     rooms: tuple[str, ...]
 
 
-def hash_device_token(token: str) -> str:
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
 def _cookie_token(environ: dict) -> str | None:
     jar = SimpleCookie()
     try:
@@ -66,12 +62,9 @@ def resolve_rooms(environ: dict, auth: object, dsn: str | None = None) -> list[s
     """The rooms this connection may join, or None to refuse it. Runs DB lookups (call off-loop)."""
     token = auth.get("token") if isinstance(auth, dict) else None
     with connect(dsn) as conn:
-        if isinstance(token, str) and 16 <= len(token) <= 256:
-            row = conn.execute(
-                "SELECT household_id FROM devices WHERE token_hash = %s AND revoked_at IS NULL",
-                (hash_device_token(token),),
-            ).fetchone()
-            return [device_room(row[0])] if row else None
+        if token is not None:
+            household_id = device_household(conn, token)
+            return [device_room(household_id)] if household_id is not None else None
         user = session_member(conn, _cookie_token(environ))
         if user is None:
             return None

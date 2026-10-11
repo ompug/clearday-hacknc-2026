@@ -302,6 +302,23 @@ def test_last_share_pops_the_bubble(api):
     assert res.json()["popped"] is True and res.json()["fill_fraction"] == 1.0
 
 
+def sky_bubble(c, name, label):
+    as_user(c, name)
+    return next(b for b in c.get("/api/sky").json()["bubbles"] if b["label"] == label)
+
+
+def test_a_partial_share_offers_and_accepts_the_remaining_amount(api):
+    h = api.h
+    pay(h, "Ben", 2000, "key-underpay-0001")  # underpayment: Ben's Electric share (4200) is partial
+    bubble = sky_bubble(api, "Ben", "Electric")
+    assert (bubble["status"], bubble["your_share_cents"], bubble["payable"]) == ("partial", 2200, True)
+
+    res = api.post("/api/payments", json=body(api, "Ben", bubble["bubble_id"], bubble["your_share_cents"]))
+    assert res.status_code == 200, res.text
+    assert res.json()["status"] == "paid"
+    assert share_state(h["dsn"], h["shares"][("Electric", "Ben")]) == ("paid", 4200)
+
+
 def test_ledger_commits_when_nessie_is_down_and_sync_retries_the_mirror(api):
     h = api.h
     api.fake.down = True
@@ -331,6 +348,43 @@ def test_popping_a_personal_bill_marks_the_nessie_bill_completed(api):
     [bill] = api.fake.children["bills"].values()
     assert bill["status"] == "completed"
     assert balance(api, "Ben") == 100000 - 4518
+
+
+def add_card(c, name):
+    with connect(c.h["dsn"]) as conn:
+        card = conn.execute(
+            """INSERT INTO accounts (user_id, type, nickname, last4, opening_balance_cents)
+               VALUES (%s, 'credit_card', 'Rewards Card', '9999', 0) RETURNING id""",
+            (c.h["users"][name],),
+        ).fetchone()[0]
+        conn.commit()
+    return card
+
+
+def test_a_personal_bill_suggests_its_own_account_not_checking(api):
+    h = api.h
+    card = add_card(api, "Ben")
+    with connect(h["dsn"]) as conn:
+        conn.execute("UPDATE transactions SET account_id = %s WHERE id = %s", (card, h["bill_txn"]))
+        conn.commit()
+    as_user(api, "Ben")
+    [bubble] = [b for b in api.get("/api/sky").json()["bubbles"] if b["bubble_id"] == f"bill_{h['bill_txn']}"]
+    assert bubble["default_account_id"] == f"acct_{card}"
+
+
+def test_a_personal_bill_paid_from_another_account_is_rejected_and_nothing_moves(api):
+    h = api.h
+    card = add_card(api, "Ben")
+    as_user(api, "Ben")
+    req = {**body(api, "Ben", f"bill_{h['bill_txn']}", 4518), "account_id": f"acct_{card}"}
+    res = api.post("/api/payments", json=req)
+    assert res.status_code == 409
+    assert api.fake.children["bills"][next(iter(api.fake.children["bills"]))]["status"] == "pending"
+    with connect(h["dsn"]) as conn:
+        assert conn.execute("SELECT status FROM transactions WHERE id = %s", (h["bill_txn"],)).fetchone() == (
+            "pending",
+        )
+        assert conn.execute("SELECT count(*) FROM payments").fetchone() == (0,)
 
 
 def test_someone_elses_bill_cannot_be_popped(api):

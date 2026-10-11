@@ -83,6 +83,11 @@ export function PayDialog({
   const state = bubble ? bubbleState(bubble) : "clear";
   const payable = bubble ? canPay(bubble) : false;
   const waitingOn = bubble ? bubble.participant_count - bubble.paid_count : 0;
+  // A personal bill posts on its own account, so it can only be paid from that one.
+  const payFrom =
+    bubble?.kind === "bill" && bubble.default_account_id
+      ? accounts.filter((a) => a.account_id === bubble.default_account_id)
+      : accounts;
 
   return (
     <dialog
@@ -159,7 +164,7 @@ export function PayDialog({
                   onChange={(e) => setAccountId(e.target.value)}
                   className="min-h-11 rounded-xl border-2 border-navy-900/30 bg-white px-3 font-normal"
                 >
-                  {accounts.map((a) => (
+                  {payFrom.map((a) => (
                     <option key={a.account_id} value={a.account_id}>
                       {a.nickname} ••{a.last4} ({ACCOUNT_TYPE_LABEL[a.type]})
                     </option>
