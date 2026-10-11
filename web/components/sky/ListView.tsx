@@ -15,7 +15,7 @@ function Row({ bubble, onOpen }: { bubble: SkyBubble; onOpen: (b: SkyBubble) => 
       type="button"
       onClick={() => onOpen(bubble)}
       data-bubble-id={bubble.bubble_id}
-      className="flex w-full items-start justify-between gap-4 rounded-2xl border border-white bg-white/80 px-4 py-3 text-left shadow-sm transition hover:bg-white hover:shadow-md"
+      className="aero-tile flex w-full items-start justify-between gap-4 rounded-2xl px-4 py-3 text-left transition hover:shadow-md"
     >
       <span className="min-w-0 flex-1">
         <span className="block text-lg font-bold break-words text-navy-950">{bubble.label}</span>

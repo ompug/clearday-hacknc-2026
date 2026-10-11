@@ -42,7 +42,7 @@ export function StateBadge({
   return (
     <span
       aria-hidden={hidden || undefined}
-      className={`inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-0.5 font-semibold ${small ? "text-xs" : "text-sm"} shadow-sm ring-1 ring-navy-900/10 ${TONE[state]} ${className}`}
+      className={`aero-badge ${state === "tight" ? "aero-badge-alert" : ""} ${small ? "text-xs" : "text-sm"} ${TONE[state]} ${className}`}
     >
       <StateIcon state={state} className="size-4 shrink-0" />
       <span>

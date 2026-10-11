@@ -146,7 +146,7 @@ export function ItemizedPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 rounded-2xl border border-white bg-white/85 p-4 shadow-sm">
+      <div className="aero-tile flex flex-col gap-2 rounded-2xl p-4">
         <label htmlFor={`${uid}-scan`} className="font-semibold">
           Scan a receipt (optional)
         </label>
@@ -202,10 +202,7 @@ export function ItemizedPanel({
         {items.map((item, index) => {
           const error = itemErrors[index];
           return (
-            <li
-              key={item.key}
-              className="flex flex-col gap-2 rounded-2xl border border-white bg-white/85 p-3 shadow-sm"
-            >
+            <li key={item.key} className="aero-tile flex flex-col gap-2 rounded-2xl p-3">
               <div className="flex items-start gap-2">
                 <input
                   type="text"

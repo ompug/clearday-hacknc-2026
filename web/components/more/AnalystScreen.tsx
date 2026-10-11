@@ -25,8 +25,8 @@ function Segments() {
   if (!data) return <p role="status">Loading segments…</p>;
 
   return (
-    <section aria-labelledby="segments-h" className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6">
-      <p className="inline-block rounded-full bg-navy-900 px-3 py-1 text-sm font-bold text-white">
+    <section aria-labelledby="segments-h" className="glass mt-4 aero-panel p-5 sm:p-6">
+      <p className="aero-badge aero-badge-navy">
         Synthetic households only: {data.total_households} invented households, no real customers
       </p>
       <h2 id="segments-h" className="mt-3 text-xl font-bold text-navy-950">
@@ -36,7 +36,7 @@ function Segments() {
         {data.segments.map((s) => {
           const pct = Math.round(s.share_at_risk * 100);
           return (
-            <li key={s.segment} className="rounded-2xl border border-white bg-white/85 px-4 py-3">
+            <li key={s.segment} className="aero-tile rounded-2xl px-4 py-3">
               <p className="flex flex-wrap justify-between gap-2 font-bold text-navy-950">
                 <span>{s.label}</span>
                 <span>

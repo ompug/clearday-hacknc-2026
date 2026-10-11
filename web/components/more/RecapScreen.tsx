@@ -39,7 +39,7 @@ function Recap() {
   }
 
   return (
-    <section aria-labelledby="recap-h" className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6">
+    <section aria-labelledby="recap-h" className="glass mt-4 aero-panel p-5 sm:p-6">
       <h2 id="recap-h" className="text-xl font-bold text-navy-950">
         Week of {recap.week_start}
       </h2>
@@ -58,7 +58,7 @@ function Recap() {
           <button
             type="button"
             onClick={toggle}
-            className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-navy-900 px-5 font-semibold text-white hover:bg-navy-800"
+            className="aero-btn mt-3 min-h-11 gap-2 rounded-full px-5"
           >
             {playing ? <PauseIcon className="size-5" /> : <PlayIcon className="size-5" />}
             {playing ? "Pause recap" : "Play recap"}
@@ -72,7 +72,7 @@ function Recap() {
       <h3 className="mt-4 font-bold text-navy-950">Transcript</h3>
       <ol aria-label="Transcript" className="mt-2 flex flex-col gap-2">
         {recap.lines.map((line, i) => (
-          <li key={i} className="rounded-2xl border border-white bg-white/85 px-4 py-3">
+          <li key={i} className="aero-tile rounded-2xl px-4 py-3">
             <span className="font-bold text-navy-950">{HOST[line.speaker]}: </span>
             <span className="text-navy-900">{line.text}</span>
           </li>

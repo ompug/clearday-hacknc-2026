@@ -58,7 +58,7 @@ export function VoiceAnnouncement({
             type="button"
             onClick={toggle}
             aria-label={playing ? "Pause announcement" : "Play announcement"}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-navy-900 px-5 font-bold text-white hover:bg-navy-800"
+            className="aero-btn min-h-11 gap-2 rounded-full px-5"
           >
             {playing ? <PauseIcon className="size-5" /> : <PlayIcon className="size-5" />}
             {playing ? "Pause" : "Play announcement"}

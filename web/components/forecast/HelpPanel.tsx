@@ -23,7 +23,7 @@ export function HelpPanel() {
   if (!panel?.triggered) return null;
 
   return (
-    <section aria-labelledby={`${uid}-h`} className="glass mt-6 rounded-[1.75rem] p-5 sm:p-6">
+    <section aria-labelledby={`${uid}-h`} className="glass mt-6 aero-panel p-5 sm:p-6">
       <h2 id={`${uid}-h`} className="text-xl font-bold text-navy-950">
         Need a hand? Free help is available
       </h2>
@@ -33,10 +33,7 @@ export function HelpPanel() {
       {open ? (
         <ul className="mt-3 flex flex-col gap-2">
           {panel.resources.map((r) => (
-            <li
-              key={r.url}
-              className="rounded-2xl border border-white bg-white/85 px-4 py-3 shadow-sm"
-            >
+            <li key={r.url} className="aero-tile rounded-2xl px-4 py-3">
               <a
                 href={r.url}
                 target="_blank"
@@ -54,7 +51,7 @@ export function HelpPanel() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-3 inline-flex min-h-11 items-center rounded-full bg-navy-900 px-5 font-semibold text-white hover:bg-navy-800"
+          className="aero-btn mt-3 min-h-11 rounded-full px-5"
         >
           Show help options
         </button>

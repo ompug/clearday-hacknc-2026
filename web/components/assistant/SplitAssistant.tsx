@@ -100,7 +100,7 @@ export function SplitAssistant({
   const proposalId = `${uid}-proposal`;
 
   return (
-    <section aria-labelledby={headingId} className="glass mt-5 rounded-[1.75rem] p-5 sm:p-6">
+    <section aria-labelledby={headingId} className="glass mt-5 aero-panel p-5 sm:p-6">
       <h2 id={headingId} className="flex items-center gap-2 text-xl font-bold text-navy-950">
         <PeopleIcon className="size-6" />
         Split with words
@@ -130,7 +130,7 @@ export function SplitAssistant({
         <button
           type="submit"
           disabled={disabled || asking || message.trim().length === 0}
-          className="min-h-11 self-end rounded-full bg-navy-900 px-6 font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_0.4rem_1rem_rgb(6_23_48/0.3)] hover:bg-navy-800 disabled:opacity-60"
+          className="aero-btn min-h-11 self-end rounded-full px-6"
         >
           {asking ? "Looking…" : "Find it"}
         </button>
@@ -152,7 +152,7 @@ export function SplitAssistant({
         <div
           role="group"
           aria-labelledby={proposalId}
-          className="mt-2 rounded-2xl bg-white/85 p-4 text-navy-950 sm:p-5"
+          className="mt-2 rounded-2xl aero-tile p-4 text-navy-950 sm:p-5"
         >
           <h3 id={proposalId} ref={proposalHeadingRef} tabIndex={-1} className="text-lg font-bold">
             Proposed split: {proposal.label}
@@ -176,7 +176,7 @@ export function SplitAssistant({
               type="button"
               onClick={() => void confirm(proposal)}
               disabled={saving}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-navy-900 px-5 font-bold text-white hover:bg-navy-800 disabled:opacity-60"
+              className="aero-btn min-h-11 gap-2 rounded-full px-5"
             >
               <CheckIcon className="size-5" />
               {saving ? "Saving…" : "Confirm split"}

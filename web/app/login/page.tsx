@@ -35,7 +35,7 @@ export default function LoginPage() {
       id="main"
       className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col justify-center px-4 py-10"
     >
-      <div className="glass rounded-[2rem] p-6 sm:p-10">
+      <div className="glass aero-panel p-6 sm:p-10">
         <div className="flex items-center gap-3">
           <ClearMark className="size-12 shrink-0" />
           <p className="text-2xl font-bold tracking-tight text-navy-900">Clearday</p>
@@ -63,7 +63,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => void signIn(persona)}
                 disabled={pending !== null}
-                className="group flex h-full w-full flex-row items-center gap-4 rounded-3xl border border-white bg-white/70 p-4 text-left shadow-md transition hover:-translate-y-0.5 hover:bg-white hover:shadow-lg disabled:opacity-70 sm:flex-col sm:text-center"
+                className="aero-tile group flex h-full w-full flex-row items-center gap-4 rounded-3xl p-4 text-left shadow-md transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70 sm:flex-col sm:text-center"
               >
                 <span
                   aria-hidden="true"

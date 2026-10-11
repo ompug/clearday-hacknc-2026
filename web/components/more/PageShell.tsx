@@ -51,14 +51,11 @@ export function PageShell({
     <>
       <AppHeader me={me} onSignOut={() => void signOut()} />
       <main id="main" className="mx-auto w-full max-w-6xl px-4 pt-6 pb-16">
-        <Link
-          href="/sky"
-          className="glass inline-flex min-h-11 items-center gap-2 rounded-full px-4 font-semibold text-navy-900"
-        >
+        <Link href="/sky" className="aero-btn aero-btn-secondary min-h-11 px-4">
           <ArrowLeftIcon className="size-5" />
           Back to your bills
         </Link>
-        <section aria-labelledby={titleId} className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6">
+        <section aria-labelledby={titleId} className="glass mt-4 aero-panel p-5 sm:p-6">
           <h1 id={titleId} className="text-2xl font-bold text-navy-950 sm:text-3xl">
             {title}
           </h1>

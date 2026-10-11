@@ -94,7 +94,7 @@ export function PayDialog({
       ref={dialogRef}
       aria-labelledby={titleId}
       onClose={onClose}
-      className="glass fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] overflow-y-auto w-[min(32rem,calc(100vw-2rem))] max-w-none rounded-[2rem] p-0 text-navy-950 backdrop:bg-navy-950/60 backdrop:backdrop-blur-sm"
+      className="glass fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] overflow-y-auto w-[min(32rem,calc(100vw-2rem))] max-w-none aero-panel p-0 text-navy-950 backdrop:bg-navy-950/60 backdrop:backdrop-blur-sm"
     >
       {bubble ? (
         <form onSubmit={(e) => void confirm(e)} className="flex flex-col gap-5 p-6 sm:p-8">
@@ -211,7 +211,7 @@ export function PayDialog({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-12 rounded-full bg-navy-900 px-6 font-semibold text-white hover:bg-navy-800"
+                  className="aero-btn min-h-12 rounded-full px-6"
                 >
                   Close
                 </button>

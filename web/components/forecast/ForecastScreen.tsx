@@ -76,10 +76,7 @@ export function ForecastScreen() {
     <>
       <AppHeader me={me} onSignOut={() => void signOut()} />
       <main id="main" className="mx-auto w-full max-w-6xl px-4 pt-6 pb-16">
-        <Link
-          href="/sky"
-          className="glass inline-flex min-h-11 items-center gap-2 rounded-full px-4 font-semibold text-navy-900"
-        >
+        <Link href="/sky" className="aero-btn aero-btn-secondary min-h-11 px-4">
           <ArrowLeftIcon className="size-5" />
           Back to your bills
         </Link>
@@ -90,10 +87,7 @@ export function ForecastScreen() {
           </p>
         ) : null}
 
-        <section
-          aria-labelledby={`${uid}-title`}
-          className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6"
-        >
+        <section aria-labelledby={`${uid}-title`} className="glass mt-4 aero-panel p-5 sm:p-6">
           <h1 id={`${uid}-title`} className="text-2xl font-bold text-navy-950 sm:text-3xl">
             Your money weather, next 30 days
           </h1>
@@ -128,10 +122,7 @@ export function ForecastScreen() {
 
         {forecast ? (
           <>
-            <section
-              aria-labelledby={`${uid}-chart`}
-              className="glass mt-6 rounded-[1.75rem] p-5 sm:p-6"
-            >
+            <section aria-labelledby={`${uid}-chart`} className="glass mt-6 aero-panel p-5 sm:p-6">
               <h2 id={`${uid}-chart`} className="text-xl font-bold text-navy-950">
                 Your checking balance, day by day
               </h2>
@@ -177,10 +168,7 @@ export function ForecastScreen() {
             </section>
 
             <div className="mt-6 grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
-              <section
-                aria-labelledby={`${uid}-bills`}
-                className="glass rounded-[1.75rem] p-5 sm:p-6"
-              >
+              <section aria-labelledby={`${uid}-bills`} className="glass aero-panel p-5 sm:p-6">
                 <h2 id={`${uid}-bills`} className="text-xl font-bold text-navy-950">
                   Bills ahead
                 </h2>
@@ -193,7 +181,7 @@ export function ForecastScreen() {
                   {bills.map((b) => (
                     <li
                       key={`${b.label}-${b.date}`}
-                      className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 rounded-2xl border border-white bg-white/85 px-4 py-3 shadow-sm"
+                      className="aero-tile flex flex-wrap items-start justify-between gap-x-4 gap-y-1 rounded-2xl px-4 py-3"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block font-bold break-words text-navy-950">{b.label}</span>
@@ -212,10 +200,7 @@ export function ForecastScreen() {
                 </ul>
               </section>
 
-              <section
-                aria-labelledby={`${uid}-drivers`}
-                className="glass rounded-[1.75rem] p-5 sm:p-6"
-              >
+              <section aria-labelledby={`${uid}-drivers`} className="glass aero-panel p-5 sm:p-6">
                 <h2 id={`${uid}-drivers`} className="text-xl font-bold text-navy-950">
                   What moves your forecast most
                 </h2>
@@ -278,7 +263,7 @@ function WantsToggle({
 }) {
   const id = useId();
   return (
-    <div className="flex max-w-sm items-start gap-4 rounded-2xl border border-white bg-white/85 p-4 shadow-sm">
+    <div className="aero-tile flex max-w-sm items-start gap-4 rounded-2xl p-4">
       <div className="min-w-0">
         <p id={`${id}-label`} className="font-semibold text-navy-950">
           Trim wants by 25%

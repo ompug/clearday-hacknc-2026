@@ -272,7 +272,7 @@ export function NewExpenseDialog({
       ref={dialogRef}
       aria-labelledby={titleId}
       onClose={onClose}
-      className="glass fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(36rem,calc(100vw-2rem))] max-w-none overflow-y-auto rounded-[2rem] p-0 text-navy-950 backdrop:bg-navy-950/60 backdrop:backdrop-blur-sm"
+      className="glass fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(36rem,calc(100vw-2rem))] max-w-none overflow-y-auto aero-panel p-0 text-navy-950 backdrop:bg-navy-950/60 backdrop:backdrop-blur-sm"
     >
       {open ? (
         <form
@@ -456,7 +456,7 @@ export function NewExpenseDialog({
                 return (
                   <li
                     key={m.user_id}
-                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border border-white bg-white/85 px-4 py-2 shadow-sm"
+                    className="aero-tile flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl px-4 py-2"
                   >
                     <span className="min-w-0">
                       <span className="block font-semibold">{name}</span>
@@ -534,7 +534,7 @@ export function NewExpenseDialog({
               type="submit"
               disabled={submitting}
               aria-disabled={!valid || undefined}
-              className="min-h-12 rounded-full bg-navy-900 px-6 font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_0.4rem_1rem_rgb(6_23_48/0.3)] hover:bg-navy-800 disabled:opacity-60"
+              className="aero-btn min-h-12 rounded-full px-6"
             >
               {submitting
                 ? "Saving…"

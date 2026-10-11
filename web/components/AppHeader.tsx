@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { AeroPillLink } from "./aero";
 import type { Me } from "@/lib/api";
 import { DisplaySettings } from "./DisplaySettings";
 import { ClearMark } from "./icons";
@@ -14,8 +15,9 @@ const MORE_LINKS = [
 ];
 
 export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => void }) {
+  const pathname = usePathname();
   return (
-    <header className="glass-navy relative z-30 md:sticky md:top-0 rounded-b-[1.75rem]">
+    <header className="glass-navy relative z-30 md:sticky md:top-0 rounded-b-[1.25rem]">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
         <div className="flex items-center gap-3">
           <ClearMark className="size-10 shrink-0" />
@@ -35,22 +37,23 @@ export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => v
           <button
             type="button"
             onClick={onSignOut}
-            className="inline-flex min-h-11 items-center rounded-full border border-white/40 px-4 font-semibold text-white hover:bg-white/15"
+            className="aero-btn aero-btn-secondary min-h-11 px-4"
           >
             Switch roommate
           </button>
         </div>
       </div>
       <nav aria-label="More from Clearday" className="mx-auto w-full max-w-6xl px-4 pb-3">
-        <ul className="flex flex-wrap gap-2">
-          {MORE_LINKS.map((l) => (
+        <ul className="aero-tabs">
+          {[
+            { href: "/sky", label: "Bills" },
+            { href: "/forecast", label: "Money weather" },
+            ...MORE_LINKS,
+          ].map((l) => (
             <li key={l.href}>
-              <Link
-                href={l.href}
-                className="inline-flex min-h-11 items-center rounded-full px-4 font-semibold text-white underline-offset-4 hover:bg-white/15 hover:underline"
-              >
+              <AeroPillLink href={l.href} active={pathname === l.href}>
                 {l.label}
-              </Link>
+              </AeroPillLink>
             </li>
           ))}
         </ul>

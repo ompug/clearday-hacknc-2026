@@ -48,7 +48,7 @@ export function InsightsSection() {
 
   return (
     <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
-      <section aria-labelledby={`${uid}-subs`} className="glass rounded-[1.75rem] p-5 sm:p-6">
+      <section aria-labelledby={`${uid}-subs`} className="glass aero-panel p-5 sm:p-6">
         <h2 id={`${uid}-subs`} className="text-xl font-bold text-navy-950">
           Subscriptions you may be doubling up on
         </h2>
@@ -57,10 +57,7 @@ export function InsightsSection() {
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {duplicates.map((d) => (
-              <li
-                key={d.merchant}
-                className="rounded-2xl border border-white bg-white/85 px-4 py-3 shadow-sm"
-              >
+              <li key={d.merchant} className="aero-tile rounded-2xl px-4 py-3">
                 <p className="font-bold break-words text-navy-950">{d.merchant}</p>
                 <p className="text-sm text-navy-800">
                   {joinNames(d.members.map((m) => m.display_name))} each pay for it, together{" "}
@@ -73,10 +70,7 @@ export function InsightsSection() {
         )}
       </section>
 
-      <section
-        aria-labelledby={`${uid}-odd`}
-        className="glass rounded-[1.75rem] p-5 sm:p-6 lg:col-span-2"
-      >
+      <section aria-labelledby={`${uid}-odd`} className="glass aero-panel p-5 sm:p-6 lg:col-span-2">
         <h2 id={`${uid}-odd`} className="text-xl font-bold text-navy-950">
           Charges that look unusual
         </h2>
@@ -87,10 +81,7 @@ export function InsightsSection() {
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {unusual.map((a) => (
-              <li
-                key={a.anomaly_id}
-                className="rounded-2xl border border-white bg-white/85 px-4 py-3 shadow-sm"
-              >
+              <li key={a.anomaly_id} className="aero-tile rounded-2xl px-4 py-3">
                 <p className="font-bold break-words text-navy-950">
                   {a.merchant} on {a.date}: {formatCents(a.amount_cents)}
                 </p>
@@ -105,7 +96,7 @@ export function InsightsSection() {
         )}
       </section>
 
-      <section aria-labelledby={`${uid}-bt`} className="glass rounded-[1.75rem] p-5 sm:p-6">
+      <section aria-labelledby={`${uid}-bt`} className="glass aero-panel p-5 sm:p-6">
         <h2 id={`${uid}-bt`} className="text-xl font-bold text-navy-950">
           How the forecast has done
         </h2>

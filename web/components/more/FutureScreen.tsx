@@ -73,10 +73,8 @@ function Future() {
 
   return (
     <>
-      <section aria-labelledby={`${uid}-h`} className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6">
-        <p className="inline-block rounded-full bg-navy-900 px-3 py-1 text-sm font-bold text-white">
-          {DISCLAIMER}
-        </p>
+      <section aria-labelledby={`${uid}-h`} className="glass mt-4 aero-panel p-5 sm:p-6">
+        <p className="aero-badge aero-badge-navy">{DISCLAIMER}</p>
         <h2 id={`${uid}-h`} className="mt-3 text-xl font-bold text-navy-950">
           Saving {formatCents(data.monthly_surplus_cents)} a month for {data.years} years could grow
           to
@@ -114,10 +112,7 @@ function Future() {
             </label>
           ))}
           <div className="sm:col-span-4">
-            <button
-              type="submit"
-              className="inline-flex min-h-11 items-center rounded-full bg-navy-900 px-5 font-semibold text-white hover:bg-navy-800"
-            >
+            <button type="submit" className="aero-btn min-h-11 rounded-full px-5">
               Update the range
             </button>
             {problem ? (
@@ -129,7 +124,7 @@ function Future() {
         </form>
       </section>
 
-      <section aria-labelledby={`${uid}-t`} className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6">
+      <section aria-labelledby={`${uid}-t`} className="glass mt-4 aero-panel p-5 sm:p-6">
         <h2 id={`${uid}-t`} className="text-xl font-bold text-navy-950">
           Year by year ({DISCLAIMER.toLowerCase()})
         </h2>

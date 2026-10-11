@@ -49,10 +49,7 @@ function Feed() {
   if (!events) return <p role="status">Loading the feed…</p>;
 
   return (
-    <section
-      aria-label="Recent household events"
-      className="glass mt-4 rounded-[1.75rem] p-5 sm:p-6"
-    >
+    <section aria-label="Recent household events" className="glass mt-4 aero-panel p-5 sm:p-6">
       {events.length === 0 ? (
         <p className="text-navy-800">Nothing yet. Pay a share or add an expense to start it off.</p>
       ) : (
@@ -62,7 +59,7 @@ function Feed() {
             return (
               <li
                 key={`${e.created_at}-${i}`}
-                className="flex items-start gap-3 rounded-2xl border border-white bg-white/85 px-4 py-3"
+                className="aero-tile flex items-start gap-3 rounded-2xl px-4 py-3"
               >
                 <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-navy-900" />
                 <div>

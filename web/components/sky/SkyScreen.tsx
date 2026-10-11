@@ -146,7 +146,7 @@ export function SkyScreen() {
           </p>
         ) : null}
 
-        <section aria-labelledby="summary-heading" className="glass rounded-[1.75rem] p-5 sm:p-6">
+        <section aria-labelledby="summary-heading" className="glass aero-panel p-5 sm:p-6">
           <h1 id="summary-heading" className="sr-only">
             {me ? `${me.user.display_name}'s bills` : "Your bills"}
           </h1>
@@ -173,10 +173,7 @@ export function SkyScreen() {
               </div>
               <ul aria-label="Your accounts" className="flex flex-wrap gap-2">
                 {accounts.map((a) => (
-                  <li
-                    key={a.account_id}
-                    className="rounded-2xl border border-white bg-white/80 px-3 py-2 shadow-sm"
-                  >
+                  <li key={a.account_id} className="aero-tile rounded-2xl px-3 py-2">
                     <span className="block text-sm font-semibold text-navy-800">
                       {a.nickname} ••{a.last4}
                     </span>
@@ -211,7 +208,7 @@ export function SkyScreen() {
               type="button"
               onClick={() => setSplitOpen(true)}
               disabled={!me}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-b from-alert-600 to-alert-700 px-5 font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_0.4rem_1rem_rgb(162_12_36/0.35)] hover:from-alert-700 disabled:opacity-60"
+              className="aero-btn min-h-11 px-5"
             >
               <PlusIcon className="size-5" />
               New shared expense
@@ -287,16 +284,14 @@ function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode
     { id: "sky", label: "Sky", icon: <BubblesIcon className="size-5" /> },
   ];
   return (
-    <div role="group" aria-label="View" className="glass flex rounded-full p-1">
+    <div role="group" aria-label="View" className="aero-tabs aero-tabs-light bg-white/80">
       {options.map((o) => (
         <button
           key={o.id}
           type="button"
           aria-pressed={view === o.id}
           onClick={() => onChange(o.id)}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 font-semibold ${
-            view === o.id ? "bg-navy-900 text-white shadow" : "text-navy-900 hover:bg-white"
-          }`}
+          className="aero-tab"
         >
           {o.icon}
           {o.label}
