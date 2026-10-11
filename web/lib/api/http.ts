@@ -57,5 +57,6 @@ export const httpApi: ApiClient = {
     request<PaymentResult>("/api/payments", { method: "POST", body: JSON.stringify(body) }),
   listHouseholdMembers: () => request<HouseholdMembersResponse>("/api/household/members"),
   createExpense: (body: CreateExpenseRequest) =>
-    request<CreateExpenseResult>("/api/expenses", { method: "POST", body: JSON.stringify(body) }),  getForecast: () => request<ForecastResponse>("/api/forecast"),
+    request<CreateExpenseResult>("/api/expenses", { method: "POST", body: JSON.stringify(body) }),
+  getForecast: () => request<ForecastResponse>("/api/forecast"),
 };

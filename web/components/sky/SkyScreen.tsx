@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   api,
   realtime,
   type Account,
+  type CreateExpenseResult,
   type Me,
   type PaymentResult,
   type SkyBubble,
@@ -16,7 +18,8 @@ import { dueDayName } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { usePreferences, type ViewMode } from "@/lib/preferences";
 import { AppHeader } from "../AppHeader";
-import { BubblesIcon, ListIcon } from "../icons";
+import { BubblesIcon, CloudSunIcon, ListIcon, PlusIcon } from "../icons";
+import { NewExpenseDialog } from "../split/NewExpenseDialog";
 import { StateIcon } from "../StateBadge";
 import { ListView } from "./ListView";
 import { PayDialog } from "./PayDialog";
@@ -39,6 +42,7 @@ export function SkyScreen() {
   const [loadError, setLoadError] = useState(false);
   const [openBubble, setOpenBubble] = useState<SkyBubble | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [splitOpen, setSplitOpen] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const refresh = useCallback(async () => {
@@ -75,9 +79,17 @@ export function SkyScreen() {
       setAnnouncement(`${event.label} is fully covered. Bubble popped for the household.`);
       void refresh();
     });
+    const offFeed = realtime.on("feed.created", (event) => {
+      if (event.type === "expense_created")
+        setAnnouncement(`${event.actor_display_name} added ${event.subject_label}.`);
+      void refresh();
+    });
+    const offForecast = realtime.on("forecast.updated", () => void refresh());
     return () => {
       offShare();
       offPop();
+      offFeed();
+      offForecast();
     };
   }, [refresh]);
 
@@ -100,6 +112,13 @@ export function SkyScreen() {
         `Your share of ${bubble.label} is paid. ${result.paid_count} of ${bubble.participant_count} roommates paid.`,
       );
     }
+    void refresh();
+  }
+
+  function handleCreated(result: CreateExpenseResult, names: string[]) {
+    setSplitOpen(false);
+    const who = names.length <= 2 ? names.join(" and ") : `${names.length} roommates`;
+    setAnnouncement(`${result.label} split with ${who}. It's in their sky now.`);
     void refresh();
   }
 
@@ -135,6 +154,13 @@ export function SkyScreen() {
                   After your bills and your share of the household&rsquo;s, with a cushion for a
                   rough week.
                 </p>
+                <Link
+                  href="/forecast"
+                  className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 font-semibold text-navy-900 ring-2 ring-navy-900/25 hover:bg-sky-50"
+                >
+                  <CloudSunIcon className="size-5" />
+                  See your 30-day forecast
+                </Link>
               </div>
               <ul aria-label="Your accounts" className="flex flex-wrap gap-2">
                 {accounts.map((a) => (
@@ -171,7 +197,18 @@ export function SkyScreen() {
           >
             Upcoming bills
           </h2>
-          <ViewToggle view={view} onChange={setView} />
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSplitOpen(true)}
+              disabled={!me}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-b from-alert-600 to-alert-700 px-5 font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_0.4rem_1rem_rgb(162_12_36/0.35)] hover:from-alert-700 disabled:opacity-60"
+            >
+              <PlusIcon className="size-5" />
+              New shared expense
+            </button>
+            <ViewToggle view={view} onChange={setView} />
+          </div>
         </div>
 
         <ul
@@ -199,6 +236,13 @@ export function SkyScreen() {
           ) : null}
         </div>
       </main>
+
+      <NewExpenseDialog
+        open={splitOpen}
+        meId={me?.user.user_id ?? null}
+        onClose={() => setSplitOpen(false)}
+        onCreated={handleCreated}
+      />
 
       <PayDialog
         bubble={openBubble}

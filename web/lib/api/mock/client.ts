@@ -397,7 +397,7 @@ function createExpense(userId: string, req: CreateExpenseRequest): CreateExpense
 // with time. Output shape matches the spec's Analytics contract exactly.
 
 const MOCK_INCOME: Record<string, { cents: Cents; burn: Cents; want_share: number }> = {
-  u_maya: { cents: 42_000, burn: 4_500, want_share: 0.4 },
+  u_maya: { cents: 98_000, burn: 3_600, want_share: 0.4 },
   u_jake: { cents: 110_000, burn: 3_200, want_share: 0.45 },
   u_priya: { cents: 160_000, burn: 3_800, want_share: 0.3 },
 };

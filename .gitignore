@@ -23,6 +23,7 @@ dist/
 node_modules/
 .next/
 .next-e2e/
+.next-mock/
 out/
 .vercel/
 *.tsbuildinfo

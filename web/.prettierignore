@@ -1,5 +1,6 @@
 .next
 .next-e2e
+.next-mock
 node_modules
 out
 next-env.d.ts
