@@ -50,7 +50,7 @@ Devpost closes at 10:00 AM EST Sunday with no extensions; submit early and keep 
 - [ ] One submission only, started by one team member
 - [ ] General track selected (or Beginner if more than half the team is new to hackathons)
 - [ ] Tracks opted in: Nessie, ElevenLabs, Tiger Data, Community, Commit
-- [ ] GitHub link to a public repo with a README
+- [ ] GitHub link to a public repo with a README (README.md written; confirm the repo is public)
 - [ ] Demo video 2 minutes or less
 - [ ] Commit Fellowship supplemental form submitted
 
@@ -58,7 +58,7 @@ Devpost closes at 10:00 AM EST Sunday with no extensions; submit early and keep 
 
 - [ ] Find the assigned table on Devpost's Tables tab by 11:00 AM
 - [ ] Two laptops, Clearday Home, chargers, phone hotspot, and power strip at the table
-- [ ] Demo data reset script ready so every judge sees a fresh run
+- [x] Demo data reset script ready so every judge sees a fresh run (`uv run python -m scripts.reset_demo`)
 - [ ] At least one teammate at the table from 12:00 to 1:30 PM (a missing team scores 0 from that judge)
 - [ ] Closing ceremony at 3:00 PM, Pauli Murray (Hamilton) Hall 100
 
