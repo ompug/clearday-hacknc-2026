@@ -15,7 +15,12 @@ class Settings(BaseSettings):
 
     nessie_api_key: SecretStr = SecretStr("")
     nessie_base_url: str = "https://prod-api.nessieisreal.com"
-    gemini_api_key: SecretStr = SecretStr("")
+    # The model (Gemma) behind an OpenAI-compatible chat-completions endpoint with tool calling.
+    # Empty base URL or model: the assistant uses its template fallback only.
+    llm_base_url: SecretStr = SecretStr("")
+    llm_model: str = ""
+    llm_api_key: SecretStr = SecretStr("")
+    llm_timeout_s: float = 20.0  # whole-request budget across all model calls
     elevenlabs_api_key: SecretStr = SecretStr("")
     elevenlabs_voice_id: str = ""
     elevenlabs_model_id: str = ""

@@ -1,5 +1,7 @@
 import type {
   AccountsResponse,
+  AssistantRequest,
+  AssistantResponse,
   CreateExpenseRequest,
   CreateExpenseResult,
   DemoPersona,
@@ -31,6 +33,8 @@ export interface ApiClient {
   getForecast(): Promise<ForecastResponse>;
   listHouseholdMembers(): Promise<HouseholdMembersResponse>;
   createExpense(request: CreateExpenseRequest): Promise<CreateExpenseResult>;
+  /** Natural-language split: a proposal to confirm; nothing is saved. */
+  askAssistant(request: AssistantRequest): Promise<AssistantResponse>;
 }
 
 export type Unsubscribe = () => void;

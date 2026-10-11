@@ -19,6 +19,7 @@ import { formatCents } from "@/lib/money";
 import { usePreferences, type ViewMode } from "@/lib/preferences";
 import { AppHeader } from "../AppHeader";
 import { BubblesIcon, CloudSunIcon, ListIcon, PlusIcon } from "../icons";
+import { SplitAssistant } from "../assistant/SplitAssistant";
 import { NewExpenseDialog } from "../split/NewExpenseDialog";
 import { StateIcon } from "../StateBadge";
 import { ListView } from "./ListView";
@@ -225,6 +226,8 @@ export function SkyScreen() {
             </li>
           ))}
         </ul>
+
+        <SplitAssistant disabled={!me} onCreated={handleCreated} />
 
         <div className="mt-5">
           {sky ? (

@@ -37,7 +37,7 @@ Phase 1 must work end to end before anyone starts Phase 3; target times assume w
 
 **Phase 1: Foundation (by about 11:00 PM Saturday)**
 
-- [ ] Repo, environment variables, and deploy pipeline set up; .tech domain claimed
+- [ ] Repo, environment variables, and deploy pipeline set up (cut: hosting is local only)
 - [ ] Nessie key verified; seed script creates three roommates with checking, savings, and credit card accounts and 60 days of data
 - [ ] Tiger Data database with ledger and account tables and the transaction hypertable
 - [ ] Sync job mirrors Nessie into the database
@@ -55,7 +55,7 @@ Phase 1 must work end to end before anyone starts Phase 3; target times assume w
 
 **Phase 3: Intelligence and voice (by about 6:30 AM Sunday)**
 
-- [ ] Gemini natural-language split through the AI gateway
+- [ ] Gemma natural-language split through the AI gateway
 - [ ] Receipt itemizing with price memory
 - [ ] ElevenLabs announcement and briefing, with transcripts
 - [ ] Gemma narrator on the device if the benchmark passed; templates otherwise
@@ -86,4 +86,4 @@ If a phase runs late, drop features in this order and keep going; never cut the 
 9. Anomaly detection (keep duplicate subscriptions)
 10. Price memory (keep receipt itemizing)
 11. ElevenLabs on the device (play from laptop)
-12. Gemini natural-language split (keep manual split UI)
+12. Gemma natural-language split (keep manual split UI)

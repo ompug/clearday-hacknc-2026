@@ -15,8 +15,8 @@ Checkable rules for every change. Sources: `CLAUDE.md` and `docs/03-security-and
 
 4. **Identity from the session cookie or device token only.** User and household IDs are never read from request bodies, query params or model output.
    **Check:** grep handlers for `user_id`/`household_id` in request models; each comes from the auth dependency.
-5. **External calls live in `api/` only.** Nessie, Gemini and ElevenLabs keys sit in `api/.env`; `web/` and `device/` call only our API.
-   **Check:** `grep -rE "nessieisreal|generativelanguage|elevenlabs" web device` is empty; `bash scripts/check_secrets.sh` passes.
+5. **External calls live in `api/` only.** Nessie, model (Gemma) and ElevenLabs keys sit in `api/.env`; `web/` and `device/` call only our API.
+   **Check:** `grep -rE "nessieisreal|chat/completions|elevenlabs" web device` is empty; `bash scripts/check_secrets.sh` passes.
 
 ## Privacy
 
@@ -31,7 +31,7 @@ Checkable rules for every change. Sources: `CLAUDE.md` and `docs/03-security-and
 
 9. **Untrusted text is data.** Merchant names, memos and receipt text are wrapped as untrusted content in prompts and never select tools or actions.
    **Check:** every prompt builder wraps these fields in the untrusted-data wrapper; no code path branches on their content.
-10. **Gemini tool contract.** Only the six contract tools, their field/row/date limits, max 3 tool calls per request, handles mapped back server-side, every amount recomputed from the ledger, user confirms in the UI.
+10. **Model tool contract.** Only the six contract tools, their field/row/date limits, max 3 tool calls per request, handles mapped back server-side, every amount recomputed from the ledger, user confirms in the UI.
     **Check:** gateway tests reject an unknown tool and a 4th call; tool outputs omit account numbers, Nessie IDs and real names.
 11. **`ai_audit` logs fields and row counts, never values.**
     **Check:** the audit insert writes field names and counts only; a test asserts no amount or merchant string lands in the row.

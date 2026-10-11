@@ -2,6 +2,8 @@ import type { ApiClient } from "./client";
 import {
   ApiError,
   type AccountsResponse,
+  type AssistantRequest,
+  type AssistantResponse,
   type CreateExpenseRequest,
   type CreateExpenseResult,
   type DemoPersona,
@@ -59,4 +61,6 @@ export const httpApi: ApiClient = {
   createExpense: (body: CreateExpenseRequest) =>
     request<CreateExpenseResult>("/api/expenses", { method: "POST", body: JSON.stringify(body) }),
   getForecast: () => request<ForecastResponse>("/api/forecast"),
+  askAssistant: (body: AssistantRequest) =>
+    request<AssistantResponse>("/api/assistant", { method: "POST", body: JSON.stringify(body) }),
 };

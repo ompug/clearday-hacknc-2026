@@ -4,21 +4,21 @@
 
 The model can read only what the current request needs and can never move money; every rule below is enforced in backend code, not in the prompt.
 
-1. **No direct access.** Only the backend holds the Nessie, Gemini, and ElevenLabs keys. Gemini never calls Nessie.
+1. **No direct access.** Only the backend holds the Nessie, model, and ElevenLabs keys. The model (Gemma) never calls Nessie.
 2. **Identity from the session.** The user or household ID comes from the authenticated session or device token, never from model output or request bodies.
-3. **Interpret, then fetch.** The first Gemini call sees the user's message and tool definitions only. The backend validates the returned intent before running any query.
+3. **Interpret, then fetch.** The first model call sees the user's message and tool definitions only. The backend validates the returned intent before running any query.
 4. **Minimum data.** Each tool returns only the fields its purpose needs, with row and date limits.
-5. **Math in code.** Splits, forecasts, and anomaly scores are computed by the backend; Gemini only phrases results.
+5. **Math in code.** Splits, forecasts, and anomaly scores are computed by the backend; the model only phrases results.
 6. **Propose, then confirm.** The model can propose a split or request; the user confirms in the UI, and the server re-validates amounts against the ledger.
 7. **Untrusted text is data.** Merchant names, memos, and receipt text are wrapped as untrusted content and can't trigger actions.
 8. **Opt-in and auditable.** AI features are opt-in; each AI request logs which fields and how many rows were sent, never raw values.
 9. **Private by default.** Amounts never appear in the feed or on Clearday Home.
 
-## Gemini tool contract
+## Model tool contract
 
-Gemini may call only these tools; anything else is rejected by the AI gateway.
+The app's model is Gemma (Google's open model), called by the backend through an OpenAI-compatible chat-completions endpoint with tool calling; the endpoint is configured only in `api/.env`. The model may call only these tools; anything else is rejected by the AI gateway.
 
-| Tool | Inputs (validated) | Returns to Gemini | Limits |
+| Tool | Inputs (validated) | Returns to the model | Limits |
 | --- | --- | --- | --- |
 | find\_purchase | date range, merchant hint, approximate amount | handle, merchant, amount, date | 30 days, 20 rows |
 | list\_household\_members | none | placeholder names (Person A, B, C) | Current household only |
@@ -27,11 +27,11 @@ Gemini may call only these tools; anything else is rejected by the AI gateway.
 | explain\_anomaly | anomaly handle | merchant, amount, typical range | One item |
 | read\_receipt | uploaded image | line items, tax, tip | Image the user just uploaded |
 
-**Never sent to Gemini:** account numbers, Nessie IDs, balances (unless the question requires one), other households' data, real names of other people, full transaction history.
+**Never sent to the model:** account numbers, Nessie IDs, balances (unless the question requires one), other households' data, real names of other people, full transaction history.
 
 **Gateway checks on every call:** schema validation, tool allowlist, maximum 3 tool calls per request, handles mapped back server-side, and all amounts recomputed from the ledger before showing a proposal.
 
-Check Gemini's API terms for how prompts are used; free and paid tiers have historically differed on data use.
+Check the model host's terms for how prompts are used; free and paid tiers often differ on data use. If the model is slow, rate-limited or unset, the assistant answers from a deterministic template instead.
 
 ## Clearday Home device rules
 
@@ -42,7 +42,7 @@ A shared speaker can be overheard and voice is not identity, so the device only 
 - Personal questions get "I've sent that to your phone."
 - Cannot move money; it can only trigger a confirmation prompt on a member's phone.
 - Never mentions hardship signals or help resources.
-- Holds a hashed, revocable household token with read-only scope; no Nessie, Gemini, or ElevenLabs keys on the device.
+- Holds a hashed, revocable household token with read-only scope; no Nessie, model, or ElevenLabs keys on the device.
 - Quiet hours and announcement types are set in the app.
 
 **On-device AI (Gemma)**
@@ -79,7 +79,7 @@ The help panel gives general information and referrals only; it never interprets
 - Explicit consent before any data is shared with a third party
 - No referral fees or paid placements
 - Disclaimer on every screen: "General information, not legal advice"
-- Gemini is instructed to route legal questions to the panel, not answer them
+- The model is instructed to route legal questions to the panel, not answer them
 
 **North Carolina resources to verify before the demo** (names from memory; confirm current links, phone numbers, and eligibility on each official site)
 

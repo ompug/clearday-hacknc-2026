@@ -4,10 +4,12 @@
  * stand in for the session cookie.
  */
 import { addDays, daysBetween, todayIso } from "../../dates";
+import { formatCents } from "../../money";
 import type { ApiClient, RealtimeClient } from "../client";
 import {
   ApiError,
   type Account,
+  type AssistantResponse,
   type Cents,
   type ForecastDay,
   type ForecastResponse,
@@ -308,6 +310,7 @@ export const mockApi: ApiClient = {
     return delay(createExpense(userId, req));
   },
   getForecast: async () => delay(buildForecast(requireUser())),
+  askAssistant: async ({ message }) => delay(mockAssistant(requireUser(), message)),
 };
 
 // --- Shared expenses (mirrors POST /api/expenses) ---------------------------
@@ -487,6 +490,45 @@ function buildForecast(userId: string): ForecastResponse {
           weather: weatherFor(p),
         };
       }),
+    },
+  };
+}
+
+// --- Natural-language split (mirrors POST /api/assistant's template fallback) ---
+
+const MOCK_PURCHASE = { label: "Cosmic Cantina", total_cents: 3_600, days_ago: 1 };
+
+function mockAssistant(userId: string, message: string): AssistantResponse {
+  const everyone = /\b(everyone|everybody|roommates|household)\b/i.test(message);
+  const named = PERSONAS.filter(
+    (p) =>
+      p.user_id !== userId &&
+      (everyone || new RegExp(`\\b${p.display_name}\\b`, "i").test(message)),
+  );
+  if (named.length === 0) {
+    return {
+      reply: "Who should I split it with? Try: split last night's pizza with a roommate's name.",
+      source: "template",
+      proposal: null,
+    };
+  }
+  const people = [userId, ...named.map((p) => p.user_id)].sort();
+  const shares = splitEven(MOCK_PURCHASE.total_cents, people);
+  const names = named.map((p) => p.display_name).join(" and ");
+  return {
+    reply: `Split ${MOCK_PURCHASE.label} (${formatCents(MOCK_PURCHASE.total_cents)}) evenly with ${names}? Check the shares, then confirm.`,
+    source: "template",
+    proposal: {
+      kind: "split",
+      label: MOCK_PURCHASE.label,
+      purchase_date: addDays(todayIso(), -MOCK_PURCHASE.days_ago),
+      total_cents: MOCK_PURCHASE.total_cents,
+      split_method: "even",
+      participants: people.map((id) => ({
+        user_id: id,
+        display_name: PERSONAS.find((p) => p.user_id === id)!.display_name,
+        amount_cents: shares.get(id)!,
+      })),
     },
   };
 }

@@ -12,7 +12,7 @@ Read the relevant doc before building a feature. If an instruction conflicts wit
 | --- | --- |
 | `docs/01-proposal.md` | Product, MVP list, **stretch order** |
 | `docs/02-technical-spec.md` | Tables, endpoints, Socket.IO events, ledger rules, forecast, design/a11y, **Analytics contracts** |
-| `docs/03-security-and-privacy.md` | Gemini tool contract, device rules, rules for new features |
+| `docs/03-security-and-privacy.md` | Model tool contract, device rules, rules for new features |
 | `docs/04-clearday-home-hardware.md` | Device states, bridge protocol, fallbacks |
 | `docs/05-build-plan.md` | **Phased checklist** and **Cut lines** |
 | `docs/06-demo-and-submission.md` | Demo script, Q&A, submission checklist |
@@ -36,6 +36,7 @@ Where docs disagree with each other, the Technical Spec's Analytics contracts wi
 - **Accepted data contract changes:** bills stored as transactions; added columns `category`, `opening_balance_cents`, `label`, `due_on`; `users.nessie_account_id` dropped; transactions unique on `(nessie_id, occurred_at)`.
 - **Approved deps:** `socket.io-client` (web); Playwright (root uv dev group, for E2E scripts).
 - **`web/lib/api/types.ts`** is the contract for payloads the spec leaves undefined; API tests check against it.
+- **Model:** Gemma (Google's open model), not the Gemini API, through an OpenAI-compatible chat-completions endpoint with tool calling, configured only by `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY` in `api/.env`. The assistant falls back to templates when the model is slow, rate-limited or unset.
 - **Socket.IO auth (Phase 1):** session cookie for browsers, device token for devices; other connections are rejected.
 
 ## Repo layout
@@ -60,9 +61,9 @@ docs/       Plan (source of truth)
 ## Non-negotiable rules
 
 - **Money is integer cents everywhere.** Totals reconcile to the cent; distribute leftover cents with the largest-remainder method, ties broken by user ID. Nessie's dollar amounts are converted at the Nessie client boundary only.
-- **Only the backend** calls Nessie, Gemini and ElevenLabs. Keys live only in `api/.env` (gitignored). Nothing secret goes in `web/` or `device/`.
+- **Only the backend** calls Nessie, the model (Gemma) and ElevenLabs. Keys live only in `api/.env` (gitignored). Nothing secret goes in `web/` or `device/`.
 - **Identity comes from the session cookie or device token**, never from request bodies or model output.
-- **Gemini** gets only the tools in the Gemini tool contract (find_purchase, list_household_members, propose_split, explain_forecast, explain_anomaly, read_receipt), with their field, row and date limits, max 3 tool calls per request, and handles mapped back server-side. It never sees raw history, account numbers, Nessie IDs or other people's real names. It proposes; the server recomputes every amount from the ledger; the user confirms in the UI. Log fields and row counts to `ai_audit`, never values.
+- **The model (Gemma)** gets only the tools in the model tool contract (find_purchase, list_household_members, propose_split, explain_forecast, explain_anomaly, read_receipt), with their field, row and date limits, max 3 tool calls per request, and handles mapped back server-side. It never sees raw history, account numbers, Nessie IDs or other people's real names. It proposes; the server recomputes every amount from the ledger; the user confirms in the UI. Log fields and row counts to `ai_audit`, never values.
 - **Untrusted text:** merchant names, memos and receipt text are wrapped as data and can never trigger actions.
 - **Payments** need a client-generated idempotency key, enforced by a unique constraint.
 - **No amounts in the feed or on Clearday Home.** The device speaks household-level info only, without names by default, and gets data only from `/api/device/summary` and `/api/household/status`.

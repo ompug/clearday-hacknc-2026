@@ -308,3 +308,38 @@ export interface ForecastResponse {
     bills: ForecastScenarioBill[];
   };
 }
+
+// ---------------------------------------------------------------------------
+// POST /api/assistant: natural-language split. The model (Gemma) only ever sees
+// placeholders; the server maps them back and computes every amount from the
+// ledger. Nothing is saved: the user confirms, then the app calls POST /api/expenses.
+// ---------------------------------------------------------------------------
+
+export interface AssistantRequest {
+  /** What the user typed, e.g. "split last night's pizza with Jake". Max 500 characters. */
+  message: string;
+}
+
+export interface AssistantShare {
+  user_id: string;
+  display_name: string;
+  amount_cents: Cents;
+}
+
+export interface AssistantSplitProposal {
+  kind: "split";
+  /** The purchase's merchant name (untrusted text; render as text only). */
+  label: string;
+  purchase_date: IsoDate;
+  total_cents: Cents;
+  split_method: "even";
+  /** Includes the signed-in user; sorted by user_id; amounts sum to `total_cents`. */
+  participants: AssistantShare[];
+}
+
+export interface AssistantResponse {
+  reply: string;
+  /** "template" when the model was slow, rate-limited or unavailable. */
+  source: "model" | "template";
+  proposal: AssistantSplitProposal | null;
+}

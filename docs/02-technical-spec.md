@@ -4,7 +4,7 @@
 
 &#91;embedded content: Clearday architecture · 2 clients, 1 backend, 4 services\]
 
-The app and Clearday Home call only the Clearday backend, which holds every API key; Gemini sees computed summaries, never raw Nessie data.
+The app and Clearday Home call only the Clearday backend, which holds every API key; the model (Gemma) sees computed summaries, never raw Nessie data.
 
 ## Tech stack
 
@@ -18,11 +18,11 @@ Choose tools the team already knows; these are defaults, not requirements.
 | Backend | Node (Express or Next API routes) or Python (FastAPI) | Owns all secrets and external calls |
 | Database | Postgres on Tiger Data | Time-series transactions, continuous aggregates, ledger tables in one place |
 | Real-time | Socket.IO | Live shared bubbles across devices and Clearday Home |
-| AI | Gemini API with function calling and vision | Splits, receipts, explanations |
+| AI | Gemma through an OpenAI-compatible chat-completions endpoint with tool calling (template fallback) | Splits, receipts, explanations |
 | Voice | ElevenLabs text-to-speech (speech-to-text for stretch) | Clearday Home and money weather report |
 | Banking data | Capital One Nessie API | Customers, accounts, purchases, bills, deposits, transfers |
 | Hardware | Arduino UNO Q | Clearday Home |
-| Hosting | Vercel or Render, on a .tech domain | Public demo URL |
+| Hosting | Local only: API, web, and database on the demo laptop | No public deploy (user decision) |
 
 Money is stored as integer cents everywhere. All timestamps are UTC; due dates display in America/New\_York.
 
@@ -121,7 +121,7 @@ The formula for safe-to-spend, using the pessimistic path:
 \text{safe} = \min_{d \le \text{payday}} B_{P10}(d) - \text{buffer}
 ```
 
-Gemini receives only the outputs (dates, probabilities, top categories), never the underlying transactions. Thresholds and the buffer are user settings with a sensible default, e.g. $50.
+The model receives only the outputs (dates, probabilities, top categories), never the underlying transactions. Thresholds and the buffer are user settings with a sensible default, e.g. $50.
 
 **Income and needs vs. wants.** Income is modeled explicitly: detected paycheck amount, cadence, and variability, so irregular earners get wider bands. Every spending category is tagged need or want, and the engine reports both the base forecast and a "wants trimmed by 25%" scenario, so users see exactly how much safer their month gets.
 
