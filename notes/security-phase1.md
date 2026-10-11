@@ -108,7 +108,7 @@ non-secret values (`NESSIE_BASE_URL`, `ELEVENLABS_MODEL_ID`, `PGUSER`, and the
 `postgres:postgres@localhost` local DSN that is also in `.env.example`). No `.env`, credentials or
 api_key file appears in any commit's tree. `api/.env`, `device/.env`, `web/.env.local`,
 `tiger-cloud-hacknc-credentials.env` and `openrouter_api_key.txt` are all gitignored
-(`.gitignore:5-6,54-57`).
+(`.gitignore:2,5-6,54-57`).
 
 ### 7. Low: reset_demo can't touch non-seeded Nessie accounts, but its scoping is by name
 
