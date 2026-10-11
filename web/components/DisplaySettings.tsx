@@ -39,7 +39,7 @@ export function DisplaySettings() {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/40 bg-white/10 px-4 font-semibold text-white hover:bg-white/20"
+        className="aero-btn aero-btn-secondary min-h-11 px-4"
       >
         <SettingsIcon className="size-5" />
         Display

@@ -274,7 +274,7 @@ export function ItemizedPanel({
       <button
         type="button"
         onClick={() => onItems([...items, newItem(everyone)])}
-        className="flex min-h-11 items-center justify-center gap-2 self-start rounded-full bg-white px-5 font-semibold text-navy-900 ring-2 ring-navy-900/25 hover:bg-sky-50"
+        className="flex min-h-11 items-center justify-center gap-2 self-start aero-btn aero-btn-secondary px-5"
       >
         <PlusIcon className="size-5" />
         Add an item

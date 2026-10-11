@@ -23,7 +23,7 @@ export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => v
           <ClearMark className="size-10 shrink-0" />
           <div>
             <p className="text-xl leading-tight font-bold tracking-tight">Clearday</p>
-            {me ? <p className="text-sm leading-tight text-sky-100">{me.household.name}</p> : null}
+            {me ? <p className="text-sm leading-tight text-white">{me.household.name}</p> : null}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">

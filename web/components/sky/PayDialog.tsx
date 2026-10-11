@@ -185,7 +185,7 @@ export function PayDialog({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-12 rounded-full bg-white px-6 font-semibold text-navy-900 ring-2 ring-navy-900/25 hover:bg-sky-50"
+                  className="min-h-12 aero-btn aero-btn-secondary px-6"
                 >
                   Not now
                 </button>

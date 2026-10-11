@@ -61,7 +61,7 @@ html {
   );
   --aero-shadow:
     0 1.25rem 2.5rem -0.75rem rgb(6 23 48 / 0.55), 0 0.25rem 0.75rem rgb(6 23 48 / 0.25);
-  --aero-gel-navy: linear-gradient(180deg, #4f8fd0 0%, #1d5fa6 48%, #0e3a6b 52%, #154d86 100%);
+  --aero-gel-navy: linear-gradient(180deg, #1f5c9e 0%, #154d86 48%, #0a2a4f 52%, #0e3a6b 100%);
   --aero-gel-sky: linear-gradient(180deg, #ffffff 0%, #e6f5fe 48%, #c9e8fb 52%, #e3f4fd 100%);
   --aero-gel-red: linear-gradient(180deg, #ef6b7e 0%, #c8102e 48%, #a20c24 52%, #b80f2a 100%);
 }
@@ -98,7 +98,7 @@ body {
     radial-gradient(ellipse 28rem 6rem at 90% 48%, rgb(255 255 255 / 0.35), transparent 70%),
     /* sky */
     linear-gradient(180deg, #0a2a4f 0%, #1563a8 28%, #3ea2e0 58%, #a9def7 82%, #dff4ff 100%);
-  background-attachment: fixed;
+
   font-family: var(--font-sans);
 }
 
@@ -148,11 +148,11 @@ body {
     background:
       linear-gradient(
         180deg,
-        rgb(255 255 255 / 0.28) 0%,
-        rgb(255 255 255 / 0.08) 50%,
+        rgb(255 255 255 / 0.07) 0%,
+        rgb(255 255 255 / 0.02) 50%,
         rgb(255 255 255 / 0) 51%
       ),
-      linear-gradient(180deg, #1b5c9c 0%, #0e3a6b 55%, #061730 100%);
+      linear-gradient(180deg, #0e3a6b 0%, #0a2a4f 55%, #061730 100%);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
     border: 1px solid rgb(6 23 48 / 0.8);
@@ -243,7 +243,7 @@ body {
     --btn-bg: var(--aero-gel-navy);
     --btn-fg: #ffffff;
     --btn-edge: #061730;
-    --btn-glow: rgb(147 211 244 / 0.7);
+    --btn-glow: rgb(88 185 234 / 0.3);
     position: relative;
     isolation: isolate;
     display: inline-flex;
@@ -272,8 +272,11 @@ body {
     z-index: -1;
     inset: 1px 0.6rem 52% 0.6rem;
     border-radius: 9999px 9999px 40% 40% / 100% 100% 30% 30%;
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.1));
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.02));
     pointer-events: none;
+  }
+  .aero-btn-secondary::before {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.2));
   }
   .aero-btn:hover:not(:disabled) {
     filter: brightness(1.1) saturate(1.1);
@@ -291,8 +294,12 @@ body {
       inset 0 0.2rem 0.5rem rgb(6 23 48 / 0.55),
       inset 0 -0.3rem 0.6rem var(--btn-glow);
   }
+  .aero-btn:disabled:not(.aero-btn-secondary),
+  .aero-btn[aria-disabled="true"]:not(.aero-btn-secondary) {
+    --btn-bg: linear-gradient(180deg, #5f7184 0%, #4a5a6b 50%, #3d4b5a 51%, #45546a 100%);
+    --btn-glow: rgb(255 255 255 / 0.1);
+  }
   .aero-btn:disabled {
-    opacity: 0.6;
     cursor: not-allowed;
   }
   .aero-btn-secondary {
