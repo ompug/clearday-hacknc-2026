@@ -1,0 +1,17 @@
+{
+  "kicad_version": "8.0.9",
+  "components": 78,
+  "pads_checked": 295,
+  "result": "PASS",
+  "checks": [
+    "Native USB polarity and duplicated connector pins",
+    "Shared I2S clocks and separate data",
+    "Speaker BTL and grounded exposed pads",
+    "Twelve LED chain and per-pixel decoupling",
+    "Strapping and PSRAM pins unused",
+    "I2C pinout and active-low button",
+    "Every numbered PCB pad matches exported schematic",
+    "Every BOM component has an MPN"
+  ],
+  "limitations": "Connectivity only; does not certify routing, thermal performance or USB compliance."
+}

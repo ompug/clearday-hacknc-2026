@@ -1,0 +1,7 @@
+*.kicad_prl
+*.lck
+~*.lck
+*-backups/
+__pycache__/
+sheet-*.png
+power-preview.png

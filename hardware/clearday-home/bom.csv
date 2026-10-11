@@ -1,0 +1,32 @@
+References,Quantity,Value,MPN,Footprint,Manufacturer,Notes
+J1,1,USB-C / USB 2.0,USB4105-GF-A,Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal,GCT,
+"R1, R2",2,5.1k,RC0603FR-075K1L,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+U2,1,USBLC6-2SC6,USBLC6-2SC6,Package_TO_SOT_SMD:SOT-23-6,STMicroelectronics,
+"C1, C7, C12, C13, C14, C15, C16, C17, C18, C19, C20, C21, C22, C23, C24, C25, C27, C29",18,100n,GRM188R71C104KA01D,Capacitor_SMD:C_0603_1608Metric,Murata,16 V X7R
+"R3, R4",2,22,RC0603FR-0722RL,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+F1,1,2 A hold / 6 V,1206L200/6,Fuse:Fuse_1206_3216Metric,Littelfuse,PTC; derate hold current with temperature
+"C2, C8, C9, C28",4,1u,GRM188R61A105KA61D,Capacitor_SMD:C_0603_1608Metric,Murata,10 V X5R
+U3,1,AP7361C-33E / 1 A,AP7361C-33E-13,Package_TO_SOT_SMD:SOT-223-3_TabPin2,Diodes Incorporated,SOT-223 tab is GND; thermal copper required
+"C3, C6, C26",3,10u,GRM21BR61A106KE19L,Capacitor_SMD:C_0805_2012Metric,Murata,10 V X5R
+"R5, R17",2,1k,RC0603FR-071KL,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+D1,1,POWER green,LTST-C190KGKT,LED_SMD:LED_0603_1608Metric,Lite-On,
+"R6, R7, R8, R9, R18",5,10k,RC0603FR-0710KL,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+"C4, C5, C10",3,10n,GRM188R71H103KA01D,Capacitor_SMD:C_0603_1608Metric,Murata,50 V X7R
+U1,1,ESP32-S3-WROOM-1-N8R8,ESP32-S3-WROOM-1-N8R8,RF_Module:ESP32-S3-WROOM-1,Espressif Systems,"8 MB flash, 8 MB octal PSRAM; IO35/36/37 reserved"
+SW1,1,RESET,B3U-1000P,Button_Switch_SMD:SW_SPST_B3U-1000P,Omron,
+SW2,1,BOOT,B3U-1000P,Button_Switch_SMD:SW_SPST_B3U-1000P,Omron,
+U6,1,TPS22918DBVR,TPS22918DBVR,Package_TO_SOT_SMD:SOT-23-6,Texas Instruments,QOD intentionally open for 1000 uF load
+"R10, R12, R14, R15, R16",5,100k,RC0603FR-07100KL,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+C11,1,1000u,EEU-FR1A102,Capacitor_THT:CP_Radial_D10.0mm_P5.00mm,Panasonic,"10 V, D10 x H16 mm"
+U5,1,74AHCT1G125,SN74AHCT1G125DBVR,Package_TO_SOT_SMD:SOT-23-5,Texas Instruments,
+R11,1,330,RC0603FR-07330RL,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+"D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13",12,WS2812B-V5,WS2812B-V5/W,LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm,Worldsemi,
+U4,1,MAX98357AETE+T,MAX98357AETE+T,Package_DFN_QFN:TQFN-16-1EP_3x3mm_P0.5mm_EP1.23x1.23mm,Analog Devices,"Exposed pad to GND; BTL outputs, neither speaker wire is ground"
+R13,1,560k,RC0603FR-07560KL,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+J2,1,SPEAKER 4-8 ohm,B2B-PH-K-S(LF)(SN),Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical,JST,Use approximately 3 W speaker; floating BTL connection
+MK1,1,ICS-43434,ICS-43434,Sensor_Audio:InvenSense_ICS-43434-6_3.5x2.65mm,TDK InvenSense,Bottom port: footprint acoustic hole must remain open
+SW3,1,ACK / 12 mm,B3F-4050,Button_Switch_THT:SW_PUSH-12mm,Omron,Rear-facing 12 mm tactile switch
+J3,1,EXTERNAL BUTTON,B2B-PH-K-S(LF)(SN),Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical,JST,Optional passive arcade switch; no external voltage
+J4,1,QWIIC / STEMMA QT,BM04B-SRSS-TB(LF)(SN),Connector_JST:JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical,JST,
+"R19, R20",2,4.7k,RC0603FR-074K7L,Resistor_SMD:R_0603_1608Metric,Yageo,"1%, 0.1 W"
+J5,1,UART / SERVICE,FTSH-105-01-L-D,Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical,Samtec,"Custom UART pinout, not ARM SWD; 3.3 V is reference, do not power from debugger"
