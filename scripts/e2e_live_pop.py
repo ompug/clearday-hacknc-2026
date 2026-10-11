@@ -4,13 +4,14 @@ updates over Socket.IO without a reload. Screenshots land in logs/e2e/.
 Needs the API and web running against a seeded DB. Before the browsers start, it runs
 scripts/reset_demo.py on the DB that api.config points at (set DATABASE_URL_LOCAL to the same DB as
 the API), so every run starts from the seeded state. --reset-db-only skips Nessie; --no-reset skips it.
-For example:
-    uv run uvicorn api.main:app --reload --port 8000 2>&1 | tee logs/api.log
-    (cd web && npm run dev 2>&1 | tee ../logs/web.log)
-    uv run --with playwright python scripts/e2e_live_pop.py --web http://localhost:3000
+For example (Playwright is a dev dependency; once per machine: uv run playwright install chromium):
+    bash scripts/dev.sh up --e2e     # API :8001 + web :3002 on the clearday_e2e DB
+    bash scripts/dev.sh e2e          # runs this script against that stack
+or by hand against any running stack:
+    uv run python scripts/e2e_live_pop.py --web http://localhost:3001
 
-Playwright is a throwaway tool here (uv --with), not a project dependency. Exits non-zero if Jake's
-Rent share isn't open, the pop fails, or Maya's view doesn't update within the timeout.
+Exits non-zero if Jake's Rent share isn't open, the pop fails, or Maya's view doesn't update within
+the timeout.
 """
 
 from __future__ import annotations
@@ -45,7 +46,7 @@ def shot(page, focus, name: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--web", default="http://localhost:3000")
+    parser.add_argument("--web", default="http://localhost:3001")
     parser.add_argument("--headed", action="store_true")
     parser.add_argument("--chromium", help="path to a Chromium binary (else Playwright's own)")
     reset = parser.add_mutually_exclusive_group()
