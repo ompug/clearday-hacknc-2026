@@ -13,7 +13,7 @@ import datetime as dt
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
-from api import expenses, sky
+from api import expenses, forecast, sky
 from api.db import get_conn
 from api.realtime import emit_all
 from api.session import CurrentUser, current_user
@@ -40,7 +40,7 @@ class CreateExpenseRequest(BaseModel):
 async def after_expense(outcome: expenses.ExpenseOutcome) -> None:
     """Post-commit hook for a new expense: runs after the response, never on a replay."""
     await emit_all(outcome.events)
-    # Forecast refresh hook (Stream C): call it here with outcome.affected_user_ids.
+    forecast.request_update(outcome.affected_user_ids)
 
 
 @router.post("/api/expenses")

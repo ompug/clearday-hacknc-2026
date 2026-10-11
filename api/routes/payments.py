@@ -13,7 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
-from api import payments, sky
+from api import forecast, payments, sky
 from api.db import connect, get_conn
 from api.nessie.cache import PgCache
 from api.nessie.client import NessieClient
@@ -49,6 +49,7 @@ class PaymentRequest(BaseModel):
 
 async def _after_payment(events: list[Emit], payment_id: int, mirror: MirrorRunner) -> None:
     await emit_all(events)
+    forecast.request_payment_update(payment_id)
     try:
         await run_in_threadpool(mirror, payment_id)
     except Exception as exc:  # the ledger is committed; sync retries the mirror
