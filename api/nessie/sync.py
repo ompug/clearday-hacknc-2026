@@ -77,7 +77,6 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
     from api.payments import ledger_owned_nessie_ids, retry_mirrors  # noqa: PLC0415 (avoids an import cycle)
 
     retry_mirrors(conn, client)  # before fetching, so new mirror records are recognised below
-    owned = ledger_owned_nessie_ids(conn)
     stats = SyncStats()
     merchants = {m["id"]: (m["name"], m["category"]) for m in client.list_merchants()}
     accounts = conn.execute(
@@ -86,6 +85,8 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
     # Fetch everything before writing, so a Nessie failure leaves the DB untouched.
     fetched = [(a, list(_rows_for_account(client, a[2], merchants, stats))) for a in accounts]
     with conn.transaction():
+        # Read after fetching: a pop can link its mirror while we fetch (the API runs sync in the background).
+        owned = ledger_owned_nessie_ids(conn)
         for (account_id, user_id, _), rows in fetched:
             stats.accounts += 1
             seen = []
@@ -134,7 +135,11 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
                     stats.updated += 1
             stats.removed += conn.execute(
                 "DELETE FROM transactions WHERE account_id = %s AND nessie_id IS NOT NULL"
-                " AND NOT (nessie_id = ANY(%s::text[]))",
+                " AND NOT (nessie_id = ANY(%s::text[]))"
+                # Never the ledger's own rows, even if their mirror was linked after we fetched.
+                " AND id NOT IN (SELECT payer_txn_id FROM payments WHERE payer_txn_id IS NOT NULL"
+                " UNION SELECT payee_txn_id FROM payments WHERE payee_txn_id IS NOT NULL"
+                " UNION SELECT bill_txn_id FROM payments WHERE bill_txn_id IS NOT NULL)",
                 (account_id, seen),
             ).rowcount
     if stats.skipped:

@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = False
     # Persona-picker login under /api/dev. Turn off in production.
     enable_dev_routes: bool = True
+    # Background Nessie sync (retries failed pop mirrors): seconds between runs; 0 turns it off.
+    nessie_sync_interval_s: float = 60.0
 
     # "local" uses DATABASE_URL_LOCAL (docker-compose TimescaleDB); "tiger" uses DATABASE_URL (Tiger Cloud).
     db_target: Literal["local", "tiger"] = "local"

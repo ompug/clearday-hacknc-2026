@@ -32,3 +32,9 @@ def scratch_dsn(server_dsn: str):
     finally:
         with connect(server_dsn, autocommit=True) as admin:
             admin.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
+
+
+@pytest.fixture(autouse=True)
+def no_background_sync(monkeypatch):
+    """TestClient(app) runs the lifespan; keep the real Nessie sync off unless a test turns it on."""
+    monkeypatch.setattr(get_settings(), "nessie_sync_interval_s", 0)

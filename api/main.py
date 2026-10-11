@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api.config import get_settings
 from api.db import connect_async
+from api.nessie.background import lifespan
 from api.realtime import sio
 from api.routes import expenses, payments, reads, session
 from api.routes import forecast as forecast_routes
@@ -21,7 +22,9 @@ log = logging.getLogger("clearday.api")
 
 settings = get_settings()
 
-fastapi_app = FastAPI(title="Clearday API", docs_url="/api/docs", openapi_url="/api/openapi.json")
+fastapi_app = FastAPI(
+    title="Clearday API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan
+)
 fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.web_origins,
