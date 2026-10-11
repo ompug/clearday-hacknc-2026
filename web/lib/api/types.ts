@@ -237,6 +237,8 @@ export interface CreateExpenseRequest {
   participants: ExpenseParticipant[];
   /** Defaults to today when omitted or null. */
   due_date?: IsoDate | null;
+  /** From an assistant proposal: the purchase being split. A second split of it is a 409 ("already split"). */
+  source_txn_id?: string | null;
 }
 
 export interface ExpenseShare {
@@ -332,6 +334,8 @@ export interface AssistantShare {
 
 export interface AssistantSplitProposal {
   kind: "split";
+  /** The purchase being split ("txn_<n>"); send it back with the confirmed expense. */
+  source_txn_id: string;
   /** The purchase's merchant name (untrusted text; render as text only). */
   label: string;
   purchase_date: IsoDate;

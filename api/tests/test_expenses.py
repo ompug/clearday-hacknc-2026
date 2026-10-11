@@ -141,7 +141,8 @@ def test_events_are_amount_free_and_the_feed_never_reaches_the_device(client):
         cols = [d.name for d in conn.execute("SELECT * FROM feed_events").description]
         row = conn.execute("SELECT * FROM feed_events").fetchone()
     assert not any("cents" in c or "amount" in c for c in cols)
-    assert not any(a in str(v) for a in amounts for v in row)
+    # text columns only: ids and timestamps hold arbitrary digits ("987" inside a microsecond count)
+    assert not any(a in v for a in amounts for v in row if isinstance(v, str))
 
 
 def test_new_expense_appears_in_each_participants_sky(client):

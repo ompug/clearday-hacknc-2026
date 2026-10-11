@@ -573,6 +573,7 @@ function mockAssistant(userId: string, message: string): AssistantResponse {
     source: "template",
     proposal: {
       kind: "split",
+      source_txn_id: "txn_1",
       label: MOCK_PURCHASE.label,
       purchase_date: addDays(todayIso(), -MOCK_PURCHASE.days_ago),
       total_cents: MOCK_PURCHASE.total_cents,

@@ -25,7 +25,7 @@ SELECT DISTINCT ON (t.user_id, t.merchant)
        t.id, t.user_id, t.account_id, to_char(t.occurred_at, 'YYYY-MM-DD'), t.amount_cents, t.kind,
        t.category, t.merchant, t.status
 FROM transactions t
-JOIN household_members m ON m.user_id = t.user_id AND m.household_id = %s
+JOIN household_members m ON m.user_id = t.user_id AND m.household_id = %s AND m.left_at IS NULL
 WHERE t.kind = 'purchase' AND t.category = 'subscriptions'
   AND t.merchant IS NOT NULL AND t.merchant <> ''
   AND t.occurred_at::date BETWEEN %s AND %s
@@ -42,7 +42,7 @@ def duplicate_subscription_cards(conn, user: CurrentUser) -> list[dict[str, Any]
     names = dict(
         conn.execute(
             "SELECT u.id, u.display_name FROM users u JOIN household_members m ON m.user_id = u.id"
-            " WHERE m.household_id = %s",
+            " WHERE m.household_id = %s AND m.left_at IS NULL",
             (user.household_id,),
         ).fetchall()
     )

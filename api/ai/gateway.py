@@ -22,13 +22,14 @@ import json
 import logging
 import re
 import time
+import unicodedata
 import uuid
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
 
-from api import anomalies, sky
+from api import anomalies, expenses, ids, sky
 from api.ai import tools
 from api.ai.handles import Handles
 from api.config import get_settings
@@ -150,6 +151,7 @@ def _money(cents: int) -> str:
 def _proposal_json(handles: Handles, p: tools.Proposal) -> dict:
     return {
         "kind": "split",
+        "source_txn_id": ids.encode(ids.TRANSACTION, p.purchase.txn_id),
         "label": sky.display_text(p.purchase.merchant, "Shared purchase"),
         "purchase_date": p.purchase.date,
         "total_cents": p.purchase.amount_cents,
@@ -167,6 +169,23 @@ def _proposal_reply(handles: Handles, p: tools.Proposal) -> str:
     label = sky.display_text(p.purchase.merchant, "that purchase")
     total = _money(p.purchase.amount_cents)
     return f"Split {label} ({total}) evenly with {who}? Check the shares, then confirm."
+
+
+UNSAFE_REPLY = re.compile(
+    r"\d|[$€£<>]|https?:|www\.|\b\w+\.(?:com|net|org|io|app|co|xyz)\b|\w\.\w+/|\b(?:u|hh|acct|exp|sh|bill|txn|sub)_\w*",
+    re.IGNORECASE,
+)
+
+
+def safe_reply(text: str) -> str | None:
+    """The model's free text as plain, capped display text, or None to use the template instead.
+
+    Control characters are dropped. Any digit, currency sign, link, markup or raw app ID rejects the
+    whole reply: amounts and IDs come from the server only, never from the model's words."""
+    clean = " ".join("".join(" " if unicodedata.category(c)[0] in "CZ" else c for c in text).split())
+    if not clean or UNSAFE_REPLY.search(clean):
+        return None
+    return clean[:REPLY_MAX]
 
 
 def _response(reply: str, source: str, handles: Handles, proposal: tools.Proposal | None) -> dict:
@@ -337,7 +356,10 @@ def assist(conn, user: CurrentUser, message: str, llm: LLMClient | None) -> dict
         if ctx.proposal is not None:
             out = _response(_proposal_reply(handles, ctx.proposal), SOURCE_MODEL, handles, ctx.proposal)
         elif text and not stop:
-            out = _response(handles.restore(text.strip())[:REPLY_MAX], SOURCE_MODEL, handles, None)
+            safe = safe_reply(handles.restore(text))
+            if safe is None:
+                raise ModelUnavailable("unsafe_reply")
+            out = _response(safe, SOURCE_MODEL, handles, None)
         else:
             raise ModelUnavailable(stop or "no_answer")
         audit.write("request", "ok", fields=["message"], rows=1)
@@ -346,5 +368,10 @@ def assist(conn, user: CurrentUser, message: str, llm: LLMClient | None) -> dict
         ctx.proposal = None
         out = template(ctx, message)
         audit.write("request", "fallback", reason=exc.reason, fields=["message"], rows=1)
+    proposal_json = out["proposal"]
+    if proposal_json and expenses.already_split(
+        conn, user.household_id, ids.decode(ids.TRANSACTION, proposal_json["source_txn_id"])
+    ):
+        out = {"reply": "You already split that purchase.", "source": out["source"], "proposal": None}
     conn.commit()
     return out

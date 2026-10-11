@@ -67,6 +67,7 @@ export function SplitAssistant({
         total_cents: proposal.total_cents,
         split_method: proposal.split_method,
         participants: proposal.participants.map((p) => ({ user_id: p.user_id })),
+        source_txn_id: proposal.source_txn_id,
       });
       const myId = result.payer_id;
       onCreated(
@@ -78,9 +79,11 @@ export function SplitAssistant({
       inputRef.current?.focus();
     } catch (err) {
       setError(
-        err instanceof ApiError && err.status === 422
-          ? "That split no longer matches your household. Ask again."
-          : "Couldn't save the split. Nothing was added. Try again.",
+        err instanceof ApiError && err.status === 409
+          ? "That purchase is already split."
+          : err instanceof ApiError && err.status === 422
+            ? "That split no longer matches your household. Ask again."
+            : "Couldn't save the split. Nothing was added. Try again.",
       );
     } finally {
       setSaving(false);

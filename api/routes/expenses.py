@@ -35,6 +35,7 @@ class CreateExpenseRequest(BaseModel):
     split_method: str = Field(max_length=16)
     participants: list[Participant] = Field(min_length=1, max_length=20)
     due_date: dt.date | None = None
+    source_txn_id: str | None = Field(default=None, max_length=40)  # "txn_<n>" from an assistant proposal
 
 
 async def after_expense(outcome: expenses.ExpenseOutcome) -> None:
@@ -60,6 +61,7 @@ def create_expense(
             split_method=body.split_method,
             participants=[p.model_dump() for p in body.participants],
             due_on=body.due_date,
+            source_txn=body.source_txn_id,
         )
     except expenses.ExpenseError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc

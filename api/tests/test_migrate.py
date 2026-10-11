@@ -1,28 +1,28 @@
+import re
+import shutil
+from pathlib import Path
+
 import psycopg
 import pytest
 
 from api.db import connect
 from api.migrate import MIGRATIONS_DIR, MigrationError, discover, migrate
 
-PHASE1_TABLES = {
-    "households",
-    "users",
-    "household_members",
-    "accounts",
-    "transactions",
-    "expenses",
-    "shares",
-    "payments",
-    "allocations",
-    "nessie_cache",
-    "devices",
-    "feed_events",
-    "ai_audit",
-    "revoked_sessions",
-    "receipts",
-    "receipt_items",
-    "schema_migrations",
-}
+CREATE_RE = re.compile(r"^\s*CREATE TABLE (?:IF NOT EXISTS )?(\w+)", re.IGNORECASE | re.MULTILINE)
+PHASE1_TABLES = {"households", "users", "transactions", "payments", "revoked_sessions", "receipts"}
+
+
+def snapshot(tmp_path: Path) -> Path:
+    """Copy the migrations once, so a file added or edited mid-run (a teammate, a parallel agent) cannot
+    change what this test applies or expects."""
+    dest = tmp_path / "migrations"
+    shutil.copytree(MIGRATIONS_DIR, dest)
+    return dest
+
+
+def declared_tables(directory: Path) -> set[str]:
+    names = {m for p in discover(directory) for m in CREATE_RE.findall(p.read_text(encoding="utf-8"))}
+    return names | {"schema_migrations"}
 
 
 def tables(conn) -> set[str]:
@@ -30,12 +30,14 @@ def tables(conn) -> set[str]:
     return {r[0] for r in rows}
 
 
-def test_migrate_is_idempotent(scratch_dsn):
+def test_migrate_is_idempotent(scratch_dsn, tmp_path):
+    directory = snapshot(tmp_path)
     with connect(scratch_dsn) as conn:
-        first = migrate(conn)
-        assert first == [p.name for p in discover()]
-        assert migrate(conn) == []
-        assert tables(conn) == PHASE1_TABLES
+        first = migrate(conn, directory)
+        assert first == [p.name for p in discover(directory)]
+        assert migrate(conn, directory) == []
+        assert PHASE1_TABLES <= tables(conn)
+        assert tables(conn) == declared_tables(directory)
         count = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
         assert count == len(first)
         hyper = conn.execute("SELECT hypertable_name FROM timescaledb_information.hypertables").fetchall()

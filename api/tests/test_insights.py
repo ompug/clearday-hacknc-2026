@@ -67,3 +67,25 @@ def test_backtest_reports_contract_numbers_and_flags_the_stub(client):  # noqa: 
     assert 0 <= b["coverage"] <= 1 and isinstance(b["median_abs_error_cents"], int)
     assert b["holdout_days"] == 30
     assert b["is_preview"] is True  # the stub marks itself; a real module carries no flag
+
+
+def test_former_roommates_are_not_listed(client, scratch_dsn):  # noqa: F811
+    ana, ben = client.ids["users"][0], client.ids["users"][1]
+    _add_card_charges(scratch_dsn, ana, client.ids["card"], [("TuneCo", "subscriptions", 1200, 10)])
+    with connect(scratch_dsn) as conn:
+        bcard = conn.execute(
+            "INSERT INTO accounts (user_id, type, nickname, last4, opening_balance_cents)"
+            " VALUES (%s, 'credit_card', 'Card', '1111', 0) RETURNING id",
+            (ben,),
+        ).fetchone()[0]
+        conn.commit()
+    _add_card_charges(scratch_dsn, ben, bcard, [("TuneCo", "subscriptions", 1200, 7)])
+    with connect(scratch_dsn) as conn:
+        conn.execute(
+            "UPDATE household_members SET joined_at = now() - interval '90 days', left_at = now()"
+            " WHERE user_id = %s",
+            (ben,),
+        )
+        conn.commit()
+    login(client)
+    assert client.get("/api/insights/subscriptions").json() == {"duplicates": []}

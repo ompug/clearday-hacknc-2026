@@ -17,6 +17,8 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, field
 
+import psycopg
+
 from analytics.splits import split
 from api import ids, sky
 from api.payments import FILL_PLACES, expense_progress
@@ -25,6 +27,7 @@ from api.session import CurrentUser
 
 SPLIT_METHODS = ("even", "custom")
 FEED_TYPE = "expense_created"
+ALREADY_SPLIT = "That purchase is already split"
 
 
 class ExpenseError(Exception):
@@ -91,6 +94,36 @@ def _replay(conn, user: CurrentUser, key: str) -> ExpenseOutcome | None:
     return ExpenseOutcome(row[0], _result(conn, row[0]), replay=True)
 
 
+def already_split(conn, household_id: int, txn_id: int) -> bool:
+    return (
+        conn.execute(
+            "SELECT 1 FROM expenses WHERE household_id = %s AND source_txn_id = %s", (household_id, txn_id)
+        ).fetchone()
+        is not None
+    )
+
+
+def _source_txn(conn, user: CurrentUser, source_txn: str | None, total_cents: int) -> int | None:
+    """The purchase this expense splits, or None. It must be a current member's purchase whose stored
+    amount is the total (the server's ledger, not the client, decides), and not already split."""
+    if source_txn is None:
+        return None
+    txn_id = ids.decode(ids.TRANSACTION, source_txn)
+    if txn_id is None:
+        raise ExpenseError(422, "Unknown source purchase")
+    row = conn.execute(
+        """SELECT t.amount_cents FROM transactions t
+           JOIN household_members m ON m.user_id = t.user_id AND m.left_at IS NULL
+           WHERE t.id = %s AND t.kind = 'purchase' AND m.household_id = %s LIMIT 1""",
+        (txn_id, user.household_id),
+    ).fetchone()
+    if row is None or row[0] != total_cents:
+        raise ExpenseError(422, "Source purchase does not match this expense")
+    if already_split(conn, user.household_id, txn_id):
+        raise ExpenseError(409, ALREADY_SPLIT)
+    return txn_id
+
+
 def _shares(user: CurrentUser, members: set[int], total_cents: int, method: str, participants: list[dict]):
     """{user_id: cents} for the request, or ExpenseError(422)."""
     if method not in SPLIT_METHODS:
@@ -124,6 +157,7 @@ def create_expense(
     split_method: str,
     participants: list[dict],
     due_on: dt.date | None = None,
+    source_txn: str | None = None,
 ) -> ExpenseOutcome:
     """Create the expense and its shares for the signed-in `user` (from the cookie, never the body)."""
     if isinstance(total_cents, bool) or not isinstance(total_cents, int) or total_cents <= 0:
@@ -133,14 +167,15 @@ def create_expense(
         raise ExpenseError(422, "label must not be empty")
     if replay := _replay(conn, user, idempotency_key):
         return replay
+    source_id = _source_txn(conn, user, source_txn, total_cents)
     amounts = _shares(user, _member_ids(conn, user.household_id), total_cents, split_method, participants)
     due = due_on or sky.today()
     try:
         with conn.transaction():
             row = conn.execute(
                 """INSERT INTO expenses (household_id, payer_id, label, total_cents, status, split_method,
-                                         due_on, idempotency_key)
-                   VALUES (%s, %s, %s, %s, 'final', %s, %s, %s)
+                                         due_on, idempotency_key, source_txn_id)
+                   VALUES (%s, %s, %s, %s, 'final', %s, %s, %s, %s)
                    ON CONFLICT (idempotency_key) DO NOTHING RETURNING id""",
                 (
                     user.household_id,
@@ -150,6 +185,7 @@ def create_expense(
                     split_method,
                     due,
                     idempotency_key,
+                    source_id,
                 ),
             ).fetchone()
             if row is None:  # lost a race with the same key
@@ -167,6 +203,9 @@ def create_expense(
             )
             result = _result(conn, expense_id)
             paid_cents, total, _, _ = expense_progress(conn, expense_id)
+    except psycopg.errors.UniqueViolation as exc:  # the same source purchase, raced past the check
+        conn.rollback()
+        raise ExpenseError(409, ALREADY_SPLIT) from exc
     except _Raced:
         conn.rollback()
         return _replay(conn, user, idempotency_key)

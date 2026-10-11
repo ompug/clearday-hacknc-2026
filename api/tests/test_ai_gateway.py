@@ -476,3 +476,69 @@ def test_anomaly_detection_error_falls_back_to_no_anomalies(client, monkeypatch)
     res = ask(client, "split last night's pizza with Ben", script=HAPPY_SCRIPT)
     assert res.status_code == 200, res.text
     assert res.json()["proposal"]["total_cents"] == PIZZA_CENTS
+
+
+def _confirm(client, p, key=None):
+    return client.post(
+        "/api/expenses",
+        json={
+            "idempotency_key": key or str(uuid.uuid4()),
+            "label": p["label"],
+            "total_cents": p["total_cents"],
+            "split_method": p["split_method"],
+            "participants": [{"user_id": s["user_id"]} for s in p["participants"]],
+            "source_txn_id": p["source_txn_id"],
+        },
+    )
+
+
+def test_the_same_purchase_cannot_be_split_twice(client):
+    login(client, "Ana")
+    p = ask(client, "split last night's pizza with Ben", script=HAPPY_SCRIPT).json()["proposal"]
+    assert p["source_txn_id"] == f"txn_{client.pizza_id}"
+    assert _confirm(client, p).status_code == 200
+    again = _confirm(client, p)  # a fresh idempotency key, as a second ask would send
+    assert again.status_code == 409 and "already split" in again.json()["detail"].lower()
+    with connect(client.dsn) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM expenses").fetchone()[0] == 1
+    # asking again says so instead of offering a second proposal
+    res = ask(client, "split last night's pizza with Ben", script=HAPPY_SCRIPT).json()
+    assert res["proposal"] is None and "already split" in res["reply"].lower()
+
+
+def test_source_purchase_must_be_a_household_members_and_match_the_total(client):
+    login(client, "Ana")
+    p = ask(client, "split last night's pizza with Ben", script=HAPPY_SCRIPT).json()["proposal"]
+    with connect(client.dsn) as conn:
+        zed = conn.execute(
+            "SELECT id FROM transactions WHERE user_id = %s", (client.users["Zed"],)
+        ).fetchone()[0]
+    bad = dict(p, source_txn_id=f"txn_{zed}")
+    assert _confirm(client, bad).status_code == 422
+    assert _confirm(client, dict(p, total_cents=p["total_cents"] + 1)).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Total is $40.00 each",
+        "You owe 4000 cents",
+        "Call 919-555-0100 now",
+        "See https://evil.example/pay",
+        "Visit evil.example/pay",
+        "Pay txn_5 or u_2 now",
+        "<b>Pay now</b>",
+    ],
+)
+def test_unsafe_model_reply_text_is_replaced_by_the_template_reply(client, text):
+    login(client, "Ana")
+    res = ask(client, "what's up", script=[text]).json()
+    assert res["source"] == "template"
+    assert text not in res["reply"]
+
+
+def test_safe_model_reply_is_plain_capped_text(client):
+    login(client, "Ana")
+    reply = ask(client, "what's up", script=["Sure thing.\x07 " + "word " * 200]).json()
+    assert reply["source"] == "model"
+    assert len(reply["reply"]) <= gateway.REPLY_MAX and "\x07" not in reply["reply"]
