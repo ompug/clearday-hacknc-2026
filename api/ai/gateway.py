@@ -289,6 +289,10 @@ def _run_model(
         calls = reply.get("tool_calls") or []
         if not isinstance(calls, list) or not all(isinstance(c, dict) for c in calls):
             raise ModelUnavailable("bad_response")
+        if not all(
+            isinstance(c.get("function"), dict) and isinstance(c["function"].get("name"), str) for c in calls
+        ):
+            raise ModelUnavailable("bad_response")
         if not calls:
             content = reply.get("content")
             return (content if isinstance(content, str) else None), None
@@ -318,7 +322,11 @@ def _run_model(
 def assist(conn, user: CurrentUser, message: str, llm: LLMClient | None) -> dict:
     """`AssistantResponse` for the signed-in user. Commits only the audit rows."""
     handles = Handles.for_household(user.user_id, _members(conn, user))
-    handles.add_anomalies(anomalies.find(conn, user))
+    try:
+        handles.add_anomalies(anomalies.find(conn, user))
+    except Exception as exc:  # noqa: BLE001 (anomalies are optional context; never fail the request)
+        log.warning("assistant: anomaly detection failed (%s)", type(exc).__name__)
+        conn.rollback()
     ctx = tools.Context(conn=conn, user=user, handles=handles, today=sky.today())
     audit = Audit(conn, user.user_id, uuid.uuid4())
     message = message[:MESSAGE_MAX]

@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from api.config import get_settings
 from api.db import connect_async
 from api.migrate import discover
+from api.migrate import discover
 from api.nessie.background import lifespan
 from api.realtime import sio
 from api.routes import assistant as assistant_routes
@@ -65,6 +66,8 @@ async def health() -> JSONResponse:
         # Class name only: driver messages can include the host or user.
         log.warning("health: database unreachable (%s)", type(exc).__name__)
         return JSONResponse({"status": "degraded", "db": "unreachable"}, status_code=503)
+    if {p.name for p in discover()} - applied:  # a pending migration means routes can 500: say so
+        return JSONResponse({"status": "degraded", "db": "ok", "migrations": "pending"}, status_code=503)
     if {p.name for p in discover()} - applied:  # a pending migration means routes can 500: say so
         return JSONResponse({"status": "degraded", "db": "ok", "migrations": "pending"}, status_code=503)
     return JSONResponse({"status": "ok", "db": "ok"})

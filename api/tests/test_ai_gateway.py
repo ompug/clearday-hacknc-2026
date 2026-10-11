@@ -46,6 +46,8 @@ class FakeModel:
         step = self.script.pop(0) if self.script else "Done."
         if isinstance(step, str):
             message = {"role": "assistant", "content": step}
+        elif isinstance(step, dict):  # a raw (possibly malformed) assistant message
+            message = step
         else:
             message = {
                 "role": "assistant",
@@ -434,3 +436,43 @@ def test_system_prompt_lists_placeholder_people_and_the_two_day_window(client):
     today = sky.today()
     assert "You, Person A, Person B" in system
     assert f"{today - dt.timedelta(days=1)} to {today}" in system
+
+
+MALFORMED_REPLIES = [
+    pytest.param(
+        {"role": "assistant", "tool_calls": [{"id": "c1", "function": "find_purchase"}]}, id="function-is-str"
+    ),
+    pytest.param(
+        {"role": "assistant", "tool_calls": [{"id": "c1", "function": {"name": ["x"], "arguments": "{}"}}]},
+        id="name-is-list",
+    ),
+    pytest.param(
+        {"role": "assistant", "tool_calls": [{"id": "c1", "function": {"name": {"a": 1}}}]}, id="name-is-dict"
+    ),
+    pytest.param({"role": "assistant", "tool_calls": "find_purchase"}, id="tool-calls-is-str"),
+    pytest.param({"role": "assistant", "tool_calls": ["nope"]}, id="call-is-str"),
+    pytest.param({"role": "assistant", "content": ["not", "text"]}, id="content-is-list"),
+]
+
+
+@pytest.mark.parametrize("reply", MALFORMED_REPLIES)
+def test_malformed_model_reply_falls_back_to_the_template(client, reply):
+    login(client, "Ana")
+    res = ask(client, "split last night's pizza with Ben", script=[reply])
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["source"] == "template"
+    assert body["proposal"]["total_cents"] == PIZZA_CENTS
+    request = next(r for r in audit_rows(client) if r["event"] == "request")
+    assert request["outcome"] == "fallback"
+
+
+def test_anomaly_detection_error_falls_back_to_no_anomalies(client, monkeypatch):
+    def boom(conn, user):
+        raise RuntimeError("detector exploded")
+
+    monkeypatch.setattr(gateway.anomalies, "find", boom)
+    login(client, "Ana")
+    res = ask(client, "split last night's pizza with Ben", script=HAPPY_SCRIPT)
+    assert res.status_code == 200, res.text
+    assert res.json()["proposal"]["total_cents"] == PIZZA_CENTS

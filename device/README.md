@@ -47,7 +47,7 @@ On the UNO Q (Debian on the Linux side):
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `CLEARDAY_DEVICE_TOKEN` | (required) | Household device token: read-only, hashed and revocable on the server. Sent as Socket.IO `auth={"token": ...}` and HTTP `Authorization: Bearer`. |
-| `CLEARDAY_API_URL` | `http://localhost:8000` | The Clearday API (the only host the device talks to). |
+| `CLEARDAY_API_URL` | `http://localhost:8000` | The Clearday API (the only host the device talks to). On the UNO Q this is the laptop's hotspot IP, e.g. `http://192.168.x.y:8000`, with the laptop running `bash scripts/dev.sh up --lan` (the API binds 0.0.0.0; persona login stays loopback-only, the device uses its token). |
 | `BULB_DRIVER` | `fake` | `fake` or `homeassistant`. A misconfigured driver falls back to `fake` (matrix-only demo). |
 | `HA_URL` | | Home Assistant base URL, e.g. `http://homeassistant.local:8123`. |
 | `HA_TOKEN` | | Long-lived access token (secret; only in gitignored `device/.env`). |

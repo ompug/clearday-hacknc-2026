@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The one way to run Clearday's dev servers. Usage:
-#   bash scripts/dev.sh up [--e2e]            DB (podman-compose) + API + web, in the background
+#   bash scripts/dev.sh up [--e2e] [--lan]    DB (podman-compose) + migrate + API + web, in the background
+#                                             --lan binds the API to 0.0.0.0 for Clearday Home (web stays on loopback)
 #   bash scripts/dev.sh down [--e2e] [--force-port]
 #   bash scripts/dev.sh restart [--e2e]
 #   bash scripts/dev.sh status [--e2e]
@@ -21,7 +22,7 @@ cd "$ROOT"
 die() { echo "dev.sh: $*" >&2; exit 1; }
 
 cmd="${1:-}"; [ $# -gt 0 ] && shift
-e2e=0; force_port=0; db=""; passthru=()
+e2e=0; lan=0; force_port=0; db=""; passthru=()
 if [ "$cmd" = "e2e" ]; then
   e2e=1; passthru=("$@"); set --
 fi
@@ -29,6 +30,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --e2e) e2e=1 ;;
     --force-port) force_port=1 ;;
+    --lan) lan=1 ;;
     --db) [ $# -ge 2 ] || die "--db needs local, tiger or e2e"; db="$2"; shift ;;
     --db=*) db="${1#--db=}" ;;
     *) die "unknown option: $1" ;;
@@ -160,8 +162,11 @@ api_up() {
   if [ "$e2e" -eq 1 ]; then
     env+=("WEB_ORIGINS=[\"http://localhost:$web_port\",\"http://127.0.0.1:$web_port\"]")
   fi
+  local host=127.0.0.1
+  # --lan: the device (UNO Q) reaches the API over the hotspot. Persona login stays loopback-only in the API.
+  [ "$lan" -eq 1 ] && host=0.0.0.0
   start api "$api_port" "$LOGS/api$sfx.log" "${env[@]}" uv run uvicorn api.main:app --reload \
-    --reload-dir "$ROOT/api" --reload-dir "$ROOT/analytics" --port "$api_port"
+    --reload-dir "$ROOT/api" --reload-dir "$ROOT/analytics" --host "$host" --port "$api_port"
 }
 
 web_up() {
@@ -213,7 +218,8 @@ status() {
 case "$cmd" in
   up)
     db_up
-    [ "$e2e" -eq 1 ] && { use_e2e_db; uv run python -m api.migrate; }
+    [ "$e2e" -eq 1 ] && use_e2e_db
+    uv run python -m api.migrate || die "migrations failed (see above); not starting the API"
     api_up
     web_up
     wait_http api "http://localhost:$api_port/api/health" || true
@@ -226,7 +232,7 @@ case "$cmd" in
     ;;
   restart)
     bash "$0" down ${sfx:+--e2e}
-    exec bash "$0" up ${sfx:+--e2e}
+    exec bash "$0" up ${sfx:+--e2e} $([ "$lan" -eq 1 ] && echo --lan)
     ;;
   status)
     status

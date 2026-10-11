@@ -123,6 +123,8 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
                            transactions.status)
                        IS DISTINCT FROM (EXCLUDED.user_id, EXCLUDED.account_id, EXCLUDED.kind,
                            EXCLUDED.amount_cents, EXCLUDED.merchant, EXCLUDED.category, EXCLUDED.status)
+                      -- A pop can commit after `owned` was read: never touch a bill the ledger has paid.
+                      AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.bill_txn_id = transactions.id)
                     RETURNING (xmax = 0) AS inserted
                     """,
                     (user_id, account_id, nessie_id, kind, cents, merchant, category, status, when),

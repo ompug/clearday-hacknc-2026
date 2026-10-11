@@ -505,8 +505,11 @@ def household_status(conn, household_id: int) -> dict[str, Any]:
     }
 
 
+DEVICE_BILL_LABEL = "Shared bill"
+
+
 def device_summary(conn, household_id: int) -> dict[str, Any]:
-    """The narrator summary for Clearday Home: weather plus each open shared bill's label and share
+    """The narrator summary for Clearday Home: weather plus each open shared bill's generic label and share
     progress. No amounts, no names, no per-person data. Overdue bills report due_in_days 0."""
     start = today()
     shares = open_household_shares(conn, household_id)
@@ -516,7 +519,7 @@ def device_summary(conn, household_id: int) -> dict[str, Any]:
         "open_bills": len(expenses),
         "bills": [
             {
-                "label": display_text(e.label, "Bill"),
+                "label": DEVICE_BILL_LABEL,  # never the user-typed label: it is spoken on a shared speaker
                 "shares_paid": e.paid_count,
                 "shares_total": e.participants,
                 "due_in_days": max(0, (e.due_on - start).days),

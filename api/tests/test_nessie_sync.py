@@ -163,3 +163,36 @@ def test_sync_never_reposts_a_pending_bill_nessie_marks_completed(db, world):
     client.set_bill_status(pending["_id"], "completed")
     sync_accounts(db, client)
     assert ("bill", 9_900, "Duke Energy", "bills", "pending", "2026-10-15") in txns(db)
+
+
+def test_sync_racing_a_bill_pop_never_reopens_the_paid_bill(db, world, scratch_dsn, monkeypatch):
+    """A pop commits after sync has read the ledger-owned ids but before it upserts the bill. The upsert
+    holds Nessie's stale 'pending' and must not downgrade a bill our ledger has paid."""
+    from api import payments  # noqa: PLC0415
+    from api.nessie import sync as sync_mod  # noqa: PLC0415
+
+    _, client, user_id, account_id, _ = world
+    sync_accounts(db, client)
+    bill_id = db.execute("SELECT id FROM transactions WHERE kind = 'bill' AND status = 'pending'").fetchone()[
+        0
+    ]
+    db.commit()
+
+    real = payments.ledger_owned_nessie_ids
+
+    def owned_then_pop(conn):
+        owned = real(conn)  # sync's read: the bill is not owned yet
+        with connect(scratch_dsn) as other:  # the pop commits on its own connection
+            with other.transaction():
+                payments.ledger.insert_payment(
+                    other, idempotency_key="race-key-0000000000000001", from_user=user_id, to_user=None,
+                    account_id=account_id, amount_cents=9_900, bill_txn_id=bill_id,
+                )  # fmt: skip
+                other.execute("UPDATE transactions SET status = 'posted' WHERE id = %s", (bill_id,))
+        return owned
+
+    monkeypatch.setattr(payments, "ledger_owned_nessie_ids", owned_then_pop)
+    monkeypatch.setattr(sync_mod, "_is_pending_bill", lambda conn, nessie_id: False)  # stale view too
+    sync_accounts(db, client)
+    db.commit()
+    assert db.execute("SELECT status FROM transactions WHERE id = %s", (bill_id,)).fetchone()[0] == "posted"

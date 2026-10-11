@@ -118,7 +118,7 @@ def test_device_summary_is_household_level_with_no_amounts_or_names(device):
     assert body == {
         "weather": body["weather"],
         "open_bills": 1,
-        "bills": [{"label": "Electric", "shares_paid": 1, "shares_total": 3, "due_in_days": 2}],
+        "bills": [{"label": "Shared bill", "shares_paid": 1, "shares_total": 3, "due_in_days": 2}],
     }
     assert_no_salt(body)
 
@@ -180,3 +180,16 @@ def test_issue_device_token_script_needs_a_household_when_there_are_several(devi
 
     assert issue_device_token.main([], dsn=device.dsn) == 2
     assert "CLEARDAY_DEVICE_TOKEN" not in capsys.readouterr().out
+
+
+def test_device_summary_never_carries_user_typed_labels(device):
+    """Expense labels are free text ("Priya owes $40", a merchant). The device speaks them aloud, so it
+    gets a generic server-derived category instead."""
+    salted = "Maya owes Priya $40.25 for Jake's birthday"
+    with connect(device.dsn) as conn:
+        conn.execute("UPDATE expenses SET label = %s", (salted,))
+        conn.commit()
+    body = device.get("/api/device/summary", headers=bearer(device.token)).json()
+    assert [b["label"] for b in body["bills"]] == ["Shared bill"]
+    for fragment in ("Maya", "Priya", "Jake", "40", "birthday"):
+        assert fragment not in json.dumps(body)
