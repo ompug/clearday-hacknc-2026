@@ -1,4 +1,4 @@
-"""STUB: synthetic roommate household (Maya, Jake, Priya).
+"""Synthetic roommate household (Maya, Jake, Priya).
 
 Contract (docs/02-technical-spec.md, Analytics contracts):
 
@@ -15,6 +15,8 @@ Spotify), one anomalous grocery charge (Jake), and a tight week before rent (Pri
 from __future__ import annotations
 
 import datetime as dt
+import json
+from pathlib import Path
 import random
 from typing import Any
 
@@ -289,3 +291,18 @@ def _receipts() -> list[dict[str, Any]]:
             "items": [item("Bananas", 3, "lb", 59), item("Boneless Chicken Breast", 2, "lb", 449)],
         },
     ]
+
+
+def save_seed(path: str | Path = "seed_data.json", seed: int = 42, days: int = 60) -> str:
+    """Generate the synthetic dataset and save it to JSON."""
+    data = generate(seed=seed, days=days)
+    target = Path(path)
+    with target.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    return str(target)
+
+
+if __name__ == "__main__":
+    out_path = save_seed()
+    print(f"Saved seed data to {out_path}")
+
