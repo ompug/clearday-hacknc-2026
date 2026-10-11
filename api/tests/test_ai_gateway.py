@@ -425,3 +425,12 @@ def test_template_prefers_a_recent_meal_over_groceries_for_food_words(client):
     login(client, "Ana")
     res = ask(client, "split last night's dinner with Ben", status=429)
     assert res.json()["proposal"]["label"] == MERCHANT
+
+
+def test_system_prompt_lists_placeholder_people_and_the_two_day_window(client):
+    login(client, "Ana")
+    ask(client, "split last night's pizza with Ben", script=HAPPY_SCRIPT)
+    system = client.fake.requests[0]["messages"][0]["content"]
+    today = sky.today()
+    assert "You, Person A, Person B" in system
+    assert f"{today - dt.timedelta(days=1)} to {today}" in system
