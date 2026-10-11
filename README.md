@@ -38,7 +38,7 @@ docs/       Proposal, technical spec, security, hardware, build plan, demo scrip
 - **api** is the only component that calls Nessie, Gemma and ElevenLabs. Nessie data is cached in the database; the demo reads from the cache.
 - **Database:** TimescaleDB, local in podman/Docker (`docker-compose.yml`) for dev and the demo. A Tiger Cloud target (`DB_TARGET=tiger`) exists as an optional backup.
 - **device** gets data only from `/api/device/summary` and `/api/household/status`, with a revocable device token. The bulb is driven through Home Assistant.
-- **analytics:** the modules (`synthetic_data`, `forecast`, `categorize`, `detection`, `prices`, `cohorts`, `future`, `backtest`) are **stubs** returning realistic, deterministic fake data with the exact contract signatures, pending the stats teammate's real modules, which replace them file for file. **`splits.py` is real and tested**: it is the ledger's math. The forecast numbers and the backtest figure shown in the app therefore come from stubs for now and are labeled as a preview.
+- **analytics:** `forecast`, `detection`, `backtest` and `synthetic_data` are the stats teammate's real models; `categorize`, `prices`, `cohorts` and `future` are still stubs returning deterministic data behind the exact contract signatures, and `splits` (the ledger math) is real.
 - **Hosting:** local only. The demo runs the API, web and database on one laptop.
 
 ## Run it
