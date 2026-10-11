@@ -129,3 +129,8 @@ def test_full_seed_writes_db_once(db):
     second = seed.write_db(db, client, plan, s2)
     assert second["db_rows"] == {}
     assert second["sync"].changed == 0
+
+
+def test_plan_has_last_nights_pizza_for_the_split_demo():
+    pizza = [x for x in seed.build_plan().purchases if x.merchant == "Franklin Street Pizza"]
+    assert [(x.person, x.amount_cents, x.date.isoformat()) for x in pizza] == [("maya", 3_600, "2026-10-10")]

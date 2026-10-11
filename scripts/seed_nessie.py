@@ -102,6 +102,7 @@ MERCHANTS = {
     "Bojangles": "dining",
     "Med Deli": "dining",
     "Sup Dogs": "dining",
+    "Franklin Street Pizza": "dining",
     "Uber": "rideshare",
     "Target": "shopping",
     "Amazon": "shopping",
@@ -263,6 +264,8 @@ def build_plan(anchor: dt.date = ANCHOR, days: int = DAYS, seed: int = 42) -> Pl
             if p.key == "priya" and 24 <= day.day <= 30 and rng.random() < 0.5:
                 buy(p.key, "checking", "Target", rng.randrange(40, 91), day, "Shopping")  # tight week
     buy("jake", "checking", "Harris Teeter", 218, anchor - dt.timedelta(days=10), "Groceries")  # anomaly
+    # The AI demo line "split last night's pizza": Nessie dates are day-only, so no time of day.
+    buy("maya", "credit_card", "Franklin Street Pizza", 36, anchor, "Pizza night")
 
     payees = [p.key for p in PEOPLE if p.key != PAYER]
     names = {p.key: p.first for p in PEOPLE}
