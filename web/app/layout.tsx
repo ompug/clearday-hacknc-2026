@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AeroBackdrop } from "@/components/aero";
 import { PREFERENCES_STORAGE_KEY, TEXT_SIZES } from "@/lib/preference-options";
 import { PreferencesProvider } from "@/lib/preferences";
 import "./globals.css";
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: preferencesScript }} />
       </head>
       <body className="antialiased">
+        <AeroBackdrop />
         <a
           href="#main"
           className="sr-only z-50 rounded-full bg-white px-4 py-2 font-semibold text-navy-900 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
