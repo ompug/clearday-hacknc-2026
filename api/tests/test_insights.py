@@ -58,7 +58,7 @@ def test_no_duplicates_means_empty_list(client):  # noqa: F811
     assert client.get("/api/insights/subscriptions").json() == {"duplicates": []}
 
 
-def test_backtest_reports_contract_numbers_and_flags_the_stub(client):  # noqa: F811
+def test_backtest_reports_contract_numbers(client):  # noqa: F811
     login(client)
     res = client.get("/api/insights/backtest")
     assert res.status_code == 200, res.text
@@ -66,7 +66,7 @@ def test_backtest_reports_contract_numbers_and_flags_the_stub(client):  # noqa: 
     assert set(b) == {"coverage", "median_abs_error_cents", "holdout_days", "is_preview"}
     assert 0 <= b["coverage"] <= 1 and isinstance(b["median_abs_error_cents"], int)
     assert b["holdout_days"] == 30
-    assert b["is_preview"] is True  # the stub marks itself; a real module carries no flag
+    assert b["is_preview"] is False  # real module (no IS_STUB flag)
 
 
 def test_former_roommates_are_not_listed(client, scratch_dsn):  # noqa: F811

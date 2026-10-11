@@ -56,3 +56,4 @@ logs/
 *credentials*
 !api/.env.example
 *api_key*
+analytics/backtest.png
