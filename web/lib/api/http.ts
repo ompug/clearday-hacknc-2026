@@ -5,6 +5,7 @@ import {
   type CreateExpenseRequest,
   type CreateExpenseResult,
   type DemoPersona,
+  type ForecastResponse,
   type HouseholdMembersResponse,
   type Me,
   type PaymentRequest,
@@ -56,5 +57,5 @@ export const httpApi: ApiClient = {
     request<PaymentResult>("/api/payments", { method: "POST", body: JSON.stringify(body) }),
   listHouseholdMembers: () => request<HouseholdMembersResponse>("/api/household/members"),
   createExpense: (body: CreateExpenseRequest) =>
-    request<CreateExpenseResult>("/api/expenses", { method: "POST", body: JSON.stringify(body) }),
+    request<CreateExpenseResult>("/api/expenses", { method: "POST", body: JSON.stringify(body) }),  getForecast: () => request<ForecastResponse>("/api/forecast"),
 };

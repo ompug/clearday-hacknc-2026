@@ -8,6 +8,9 @@ import type { ApiClient, RealtimeClient } from "../client";
 import {
   ApiError,
   type Account,
+  type Cents,
+  type ForecastDay,
+  type ForecastResponse,
   type CreateExpenseRequest,
   type CreateExpenseResult,
   type Me,
@@ -299,7 +302,7 @@ export const mockApi: ApiClient = {
   createExpense: async (req) => {
     const userId = requireUser();
     return delay(createExpense(userId, req));
-  },
+  },  getForecast: async () => delay(buildForecast(requireUser())),
 };
 
 // --- Shared expenses (mirrors POST /api/expenses) ---------------------------
@@ -381,4 +384,104 @@ function createExpense(userId: string, req: CreateExpenseRequest): CreateExpense
     subject_label: label,
   });
   return result;
+}
+
+// --- Forecast (Stream B) ------------------------------------------------------
+// A deterministic stand-in for analytics/forecast.py: the user's open bills and shares land on
+// their due dates, a paycheck on payday, a steady daily spend in between, and a band that widens
+// with time. Output shape matches the spec's Analytics contract exactly.
+
+const MOCK_INCOME: Record<string, { cents: Cents; burn: Cents; want_share: number }> = {
+  u_maya: { cents: 42_000, burn: 4_500, want_share: 0.4 },
+  u_jake: { cents: 110_000, burn: 3_200, want_share: 0.45 },
+  u_priya: { cents: 160_000, burn: 3_800, want_share: 0.3 },
+};
+const MOCK_THRESHOLD_CENTS = 5_000;
+const MOCK_HORIZON_DAYS = 30;
+
+function mockPShort(p10: Cents, p50: Cents): number {
+  if (p50 <= MOCK_THRESHOLD_CENTS) return 0.95;
+  if (p10 >= MOCK_THRESHOLD_CENTS) return 0.03;
+  const frac = (MOCK_THRESHOLD_CENTS - p10) / Math.max(p50 - p10, 1);
+  return Math.round((0.1 + 0.4 * frac) * 100) / 100;
+}
+
+function buildForecast(userId: string): ForecastResponse {
+  const today = todayIso();
+  const sky = buildSky(userId);
+  const income = MOCK_INCOME[userId] ?? { cents: 100_000, burn: 3_000, want_share: 0.3 };
+  const checking = state.accounts[userId]?.find((a) => a.type === "checking");
+  const payday = sky.next_payday;
+  const paydays = [payday, addDays(payday, 14), addDays(payday, 28)];
+
+  const events = new Map<string, Cents>();
+  const add = (date: string, cents: Cents) => events.set(date, (events.get(date) ?? 0) + cents);
+  for (const date of paydays) add(date, income.cents);
+  const bills = sky.bubbles.filter((b) => b.status === "open" || b.status === "partial");
+  for (const b of bills) add(b.due_date, -b.your_share_cents);
+
+  const run = (burn: Cents) => {
+    const days: ForecastDay[] = [];
+    let balance = checking?.balance_cents ?? 0;
+    for (let i = 0; i < MOCK_HORIZON_DAYS; i++) {
+      const date = addDays(today, i);
+      balance += (events.get(date) ?? 0) - burn;
+      const spread = Math.round(burn * 0.9 * Math.sqrt(i + 1));
+      days.push({
+        date,
+        p10_cents: balance - spread,
+        p50_cents: balance,
+        p90_cents: balance + spread,
+      });
+    }
+    const lows = days.filter((d) => d.date <= payday).map((d) => d.p10_cents);
+    const safe = Math.max(0, Math.min(...lows) - MOCK_THRESHOLD_CENTS);
+    const pFor = (date: string) => {
+      const day = days.find((d) => d.date === date);
+      return day ? mockPShort(day.p10_cents, day.p50_cents) : 0.03;
+    };
+    return { days, safe, pFor };
+  };
+
+  const base = run(income.burn);
+  const trimmedBurn = income.burn - Math.round((income.burn * income.want_share) / 4);
+  const trimmed = run(trimmedBurn);
+  const inHorizon = bills.filter((b) => b.due_date < addDays(today, MOCK_HORIZON_DAYS));
+
+  return {
+    as_of: new Date().toISOString(),
+    threshold_cents: MOCK_THRESHOLD_CENTS,
+    days: base.days,
+    bills: inHorizon.map((b) => {
+      const p = base.pFor(b.due_date);
+      return {
+        label: b.label,
+        date: b.due_date,
+        amount_cents: b.your_share_cents,
+        p_short: p,
+        bubble_id: b.bubble_id,
+        weather: weatherFor(p),
+      };
+    }),
+    safe_to_spend_cents: base.safe,
+    next_payday: payday,
+    drivers: [
+      { category: "groceries", share_of_variance: 0.41 },
+      { category: "dining", share_of_variance: 0.34 },
+      { category: "rideshare", share_of_variance: 0.25 },
+    ],
+    wants_trimmed: {
+      safe_to_spend_cents: trimmed.safe,
+      bills: inHorizon.map((b) => {
+        const p = trimmed.pFor(b.due_date);
+        return {
+          label: b.label,
+          date: b.due_date,
+          p_short: p,
+          bubble_id: b.bubble_id,
+          weather: weatherFor(p),
+        };
+      }),
+    },
+  };
 }

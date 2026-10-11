@@ -3,6 +3,7 @@ import type {
   CreateExpenseRequest,
   CreateExpenseResult,
   DemoPersona,
+  ForecastResponse,
   HouseholdMembersResponse,
   Me,
   PaymentRequest,
@@ -27,6 +28,7 @@ export interface ApiClient {
   getSky(): Promise<SkyResponse>;
   getAccounts(): Promise<AccountsResponse>;
   pay(request: PaymentRequest): Promise<PaymentResult>;
+  getForecast(): Promise<ForecastResponse>;
   listHouseholdMembers(): Promise<HouseholdMembersResponse>;
   createExpense(request: CreateExpenseRequest): Promise<CreateExpenseResult>;
 }
