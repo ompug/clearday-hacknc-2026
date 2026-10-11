@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { api, realtime, type ForecastResponse } from "@/lib/api";
 import { dueDayName, dueLabel } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
+import { AeroWindow } from "../aero";
 import { ForecastChart } from "../forecast/ForecastChart";
 import { cushionRisk } from "../forecast/format";
 import { StormIcon, SunIcon } from "../icons";
@@ -80,11 +81,8 @@ export function MobileForecast() {
         ) : null}
       </section>
 
-      <section aria-labelledby={`${uid}-chart`} className="glass rounded-[1.75rem] p-4">
-        <h2 id={`${uid}-chart`} className="px-1 text-lg font-bold text-navy-950">
-          Checking balance, next 30 days
-        </h2>
-        <p id={`${uid}-desc`} className="mt-1 px-1 text-sm text-navy-800">
+      <AeroWindow title="Checking balance, next 30 days" controls={false} bodyClassName="p-4">
+        <p id={`${uid}-desc`} className="px-1 text-sm text-navy-800">
           Line: most likely. Band: 8 in 10 outcomes. Red line: your cushion.
         </p>
         <div className="mt-2 -mx-1">
@@ -95,13 +93,10 @@ export function MobileForecast() {
             describedBy={`${uid}-desc`}
           />
         </div>
-      </section>
+      </AeroWindow>
 
-      <section aria-labelledby={`${uid}-bills`} className="glass rounded-[1.75rem] p-4">
-        <h2 id={`${uid}-bills`} className="px-1 text-lg font-bold text-navy-950">
-          Bills ahead
-        </h2>
-        <ul className="mt-2 flex flex-col gap-2">
+      <AeroWindow title="Bills ahead" controls={false} bodyClassName="p-4">
+        <ul className="flex flex-col gap-2">
           {forecast.bills.map((b) => (
             <li
               key={`${b.label}-${b.date}`}
@@ -120,7 +115,7 @@ export function MobileForecast() {
             </li>
           ))}
         </ul>
-      </section>
+      </AeroWindow>
     </div>
   );
 }

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, realtime, type FeedEvent } from "@/lib/api";
-import { CheckIcon, PlusIcon } from "../icons";
+import { AeroWindow } from "../aero";
+import { CheckIcon, PeopleIcon, PlusIcon } from "../icons";
 
 const TEXT: Record<FeedEvent["type"], (e: FeedEvent) => string> = {
   share_paid: (e) => `${e.actor_display_name} paid their share of ${e.subject_label}`,
@@ -53,16 +54,18 @@ export function MobileFeed() {
     );
 
   return (
-    <section aria-labelledby="m-feed" className="glass rounded-[1.75rem] p-4">
-      <h2 id="m-feed" className="px-1 text-xl font-bold text-navy-950">
-        What your household has been up to
-      </h2>
+    <AeroWindow
+      title="Household activity"
+      icon={<PeopleIcon className="size-5" />}
+      controls={false}
+      bodyClassName="p-4"
+    >
       {events.length === 0 ? (
-        <p className="mt-3 px-1 text-navy-800">
+        <p className="px-1 text-navy-800">
           Nothing yet. Pay a share or add an expense to start it off.
         </p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2" aria-live="polite">
+        <ul className="flex flex-col gap-2" aria-live="polite">
           {events.map((e, i) => {
             const Icon = e.type === "expense_created" ? PlusIcon : CheckIcon;
             return (
@@ -89,6 +92,6 @@ export function MobileFeed() {
       <p className="mt-3 px-1 text-sm text-navy-800">
         Only your household sees this, and it never shows amounts.
       </p>
-    </section>
+    </AeroWindow>
   );
 }

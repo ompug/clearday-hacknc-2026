@@ -14,6 +14,7 @@ import {
 import { bubbleAccessibleName, bubbleState, progressLabel, STATE_LABELS } from "@/lib/bubbles";
 import { dueDayName, dueLabel } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
+import { AeroBubble, aeroButtonClass } from "../aero";
 import { CloudSunIcon } from "../icons";
 import { PayDialog } from "../sky/PayDialog";
 import { VoiceAnnouncement } from "../sky/VoiceAnnouncement";
@@ -123,7 +124,7 @@ export function MobileSky() {
         </ul>
         <Link
           href="/m/forecast"
-          className="m-press mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 font-semibold text-navy-900 ring-2 ring-navy-900/25"
+          className={aeroButtonClass("secondary", "m-press mt-3 inline-flex items-center gap-2")}
         >
           <CloudSunIcon aria-hidden="true" className="size-5" />
           See your forecast
@@ -156,22 +157,15 @@ export function MobileSky() {
                   key={b.bubble_id}
                   className={`flex flex-col items-center gap-2 ${i % 2 === 1 ? "mt-6" : ""}`}
                 >
-                  <button
-                    type="button"
-                    data-state={state}
+                  <AeroBubble
+                    state={state}
+                    fill={b.kind === "shared" && b.fill_fraction > 0 ? b.fill_fraction : undefined}
+                    size={`${d}rem`}
                     aria-label={bubbleAccessibleName(b)}
                     onClick={() => setOpen(b)}
-                    className="bubble m-press m-bubble shrink-0"
-                    style={{ width: `${d}rem`, height: `${d}rem` }}
+                    className="m-press m-bubble shrink-0 !p-0"
                   >
-                    {b.kind === "shared" && b.fill_fraction > 0 ? (
-                      <span
-                        aria-hidden="true"
-                        className="bubble-fill"
-                        style={{ height: `${Math.round(b.fill_fraction * 100)}%` }}
-                      />
-                    ) : null}
-                    <span className="bubble-content flex h-full flex-col items-center justify-center px-[12%] text-center">
+                    <span className="flex h-full flex-col items-center justify-center px-[12%] text-center">
                       <StateIcon
                         state={state}
                         className={`size-6 ${state === "tight" ? "text-alert-700" : "text-navy-800"}`}
@@ -183,7 +177,7 @@ export function MobileSky() {
                         {formatCents(b.your_share_cents)}
                       </span>
                     </span>
-                  </button>
+                  </AeroBubble>
                   <span className="glass flex max-w-full flex-col items-center rounded-2xl px-3 py-1 text-center text-sm font-semibold text-navy-900">
                     <span className="flex items-center gap-1">
                       <StateIcon
