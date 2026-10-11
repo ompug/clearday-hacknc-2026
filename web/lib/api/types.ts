@@ -356,3 +356,29 @@ export interface AnnouncementResponse {
   audio_url: string | null;
   source: "elevenlabs" | "cache" | "text";
 }
+
+// ---------------------------------------------------------------------------
+// GET /api/insights/subscriptions and /api/insights/backtest
+// ---------------------------------------------------------------------------
+
+export interface DuplicateSubscription {
+  /** Untrusted text; render as text only. */
+  merchant: string;
+  /** Roommates in the signed-in user's household who each pay for it. */
+  members: { user_id: string; display_name: string }[];
+  monthly_cost_cents: Cents;
+  possible_savings_cents: Cents;
+}
+
+export interface DuplicateSubscriptionsResponse {
+  duplicates: DuplicateSubscription[];
+}
+
+export interface BacktestSummary {
+  /** Share of held-out days whose actual balance fell inside the P10 to P90 band, 0 to 1. */
+  coverage: number;
+  median_abs_error_cents: Cents;
+  holdout_days: number;
+  /** True while analytics.backtest is the stub: the number is a placeholder, say so. */
+  is_preview: boolean;
+}

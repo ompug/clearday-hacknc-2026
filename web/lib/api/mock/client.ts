@@ -316,6 +316,22 @@ export const mockApi: ApiClient = {
       audio_url: null,
       source: "text" as const,
     }),
+  getDuplicateSubscriptions: async () =>
+    delay({
+      duplicates: [
+        {
+          merchant: "Spotify",
+          members: [
+            { user_id: "u_maya", display_name: "Maya" },
+            { user_id: "u_jake", display_name: "Jake" },
+          ],
+          monthly_cost_cents: 2200,
+          possible_savings_cents: 1100,
+        },
+      ],
+    }),
+  getBacktest: async () =>
+    delay({ coverage: 0.83, median_abs_error_cents: 4200, holdout_days: 30, is_preview: true }),
   askAssistant: async ({ message }) => delay(mockAssistant(requireUser(), message)),
 };
 

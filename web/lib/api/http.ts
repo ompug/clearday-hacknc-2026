@@ -5,7 +5,9 @@ import {
   type AnnouncementResponse,
   type AssistantRequest,
   type AssistantResponse,
+  type BacktestSummary,
   type CreateExpenseRequest,
+  type DuplicateSubscriptionsResponse,
   type CreateExpenseResult,
   type DemoPersona,
   type ForecastResponse,
@@ -55,6 +57,9 @@ export const httpApi: ApiClient = {
     }
   },
   getAnnouncement: () => request<AnnouncementResponse>("/api/voice/announcement"),
+  getDuplicateSubscriptions: () =>
+    request<DuplicateSubscriptionsResponse>("/api/insights/subscriptions"),
+  getBacktest: () => request<BacktestSummary>("/api/insights/backtest"),
   getSky: () => request<SkyResponse>("/api/sky"),
   getAccounts: () => request<AccountsResponse>("/api/accounts"),
   pay: (body: PaymentRequest) =>

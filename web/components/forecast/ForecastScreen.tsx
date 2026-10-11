@@ -10,6 +10,7 @@ import { AppHeader } from "../AppHeader";
 import { ArrowLeftIcon } from "../icons";
 import { StateBadge } from "../StateBadge";
 import { ForecastChart } from "./ForecastChart";
+import { InsightsSection } from "./InsightsSection";
 import { categoryLabel, cushionRisk, formatLongDate } from "./format";
 
 export function ForecastScreen() {
@@ -244,6 +245,7 @@ export function ForecastScreen() {
                 </ul>
               </section>
             </div>
+            <InsightsSection />
           </>
         ) : null}
       </main>

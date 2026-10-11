@@ -4,7 +4,9 @@ import type {
   AnnouncementResponse,
   AssistantResponse,
   CreateExpenseRequest,
+  BacktestSummary,
   CreateExpenseResult,
+  DuplicateSubscriptionsResponse,
   DemoPersona,
   ForecastResponse,
   HouseholdMembersResponse,
@@ -38,6 +40,8 @@ export interface ApiClient {
   askAssistant(request: AssistantRequest): Promise<AssistantResponse>;
   /** Spoken household announcement for a cleared shared bill: transcript plus optional audio. */
   getAnnouncement(): Promise<AnnouncementResponse>;
+  getDuplicateSubscriptions(): Promise<DuplicateSubscriptionsResponse>;
+  getBacktest(): Promise<BacktestSummary>;
 }
 
 export type Unsubscribe = () => void;
