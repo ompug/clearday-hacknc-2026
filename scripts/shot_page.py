@@ -24,6 +24,7 @@ def main() -> int:
     ap.add_argument("--user", default="Maya")
     ap.add_argument("--web", default="http://localhost:3001")
     ap.add_argument("--wait", default=None, help="text that must be visible before the shot")
+    ap.add_argument("--click", default=None, help="name of a button to click before the shot")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     name = args.path.strip("/").replace("/", "-")
@@ -37,6 +38,9 @@ def main() -> int:
             page.get_by_role("heading", name=args.heading, level=1).wait_for()
             if args.wait:
                 page.get_by_text(args.wait).first.wait_for()
+            if args.click:
+                page.get_by_role("button", name=args.click).click()
+            page.evaluate("window.scrollTo(0, 0)")  # a sticky header would otherwise sit mid-page
             page.wait_for_timeout(600)
             label = f"{name}-{view}"
             page.screenshot(path=OUT / f"{label}.png", full_page=True)

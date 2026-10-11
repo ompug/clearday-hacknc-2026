@@ -16,6 +16,7 @@ import {
   type DemoPersona,
   type ForecastResponse,
   type FutureResponse,
+  type HelpPanelResponse,
   type HouseholdMembersResponse,
   type Me,
   type PaymentRequest,
@@ -93,6 +94,7 @@ export const httpApi: ApiClient = {
     if (req?.monthly_cents !== undefined) q.set("monthly_cents", String(req.monthly_cents));
     return request<FutureResponse>(`/api/future${q.size ? `?${q}` : ""}`);
   },
+  getHelpPanel: () => request<HelpPanelResponse>("/api/help"),
   getRecap: () => request<RecapResponse>("/api/recap/latest"),
   getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),

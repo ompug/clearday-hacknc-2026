@@ -527,3 +527,25 @@ export interface FutureRequest {
   rates?: FutureRates;
   monthly_cents?: Cents;
 }
+
+// ---------------------------------------------------------------------------
+// Help panel (GET /api/help). Private to the signed-in user; empty unless one of their triggers fires.
+// ---------------------------------------------------------------------------
+
+export interface HelpResource {
+  name: string;
+  help: string;
+  url: string;
+  topic: "rent_utilities" | "legal" | "money";
+}
+
+export interface HelpPanelResponse {
+  triggered: boolean;
+  /** Generic sentences: never merchants, amounts or labels. */
+  reasons: string[];
+  /** Empty when not triggered. */
+  resources: HelpResource[];
+  /** Always "General information, not legal advice". */
+  disclaimer: string;
+  private_note: string;
+}

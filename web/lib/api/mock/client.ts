@@ -396,6 +396,27 @@ export const mockApi: ApiClient = {
       note: "An educational range for a generic broad index fund, not a prediction and not about any specific investment. Real returns vary and can be negative.",
     });
   },
+  getHelpPanel: async () =>
+    delay({
+      triggered: true,
+      reasons: ["Your forecast shows a bill coming up that may be hard to cover."],
+      resources: [
+        {
+          name: "NC 211",
+          help: "Dial 2-1-1 to find rent and utility assistance near you.",
+          url: "https://www.211nc.org",
+          topic: "rent_utilities" as const,
+        },
+        {
+          name: "LawHelpNC",
+          help: "Plain-language legal information and links to free legal help in North Carolina.",
+          url: "https://www.lawhelpnc.org",
+          topic: "legal" as const,
+        },
+      ],
+      disclaimer: "General information, not legal advice",
+      private_note: "Only you can see this. Nothing is shared with anyone.",
+    }),
   getRecap: async () =>
     delay({
       week_start: "2026-10-04",
