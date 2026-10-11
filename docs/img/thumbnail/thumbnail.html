@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Clearday thumbnail</title>
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{width:1200px;height:800px;overflow:hidden}
+body{font-family:"Segoe UI","Helvetica Neue",Arial,"DejaVu Sans",sans-serif;position:relative;
+background:linear-gradient(170deg,#061730 0%,#0e3a6b 38%,#2898d6 78%,#93d3f4 100%)}
+.rays{position:absolute;inset:0;background:
+conic-gradient(from 160deg at 15% -10%,transparent 0 8deg,rgba(255,255,255,.14) 12deg,transparent 18deg,transparent 24deg,rgba(255,255,255,.1) 28deg,transparent 36deg,transparent 44deg,rgba(255,255,255,.12) 48deg,transparent 56deg)}
+.hill{position:absolute;left:-100px;right:-100px;bottom:-140px;height:260px;border-radius:50%;background:radial-gradient(ellipse at 50% 0,#c4e7fa,#58b9ea 60%);opacity:.55}
+h1{position:absolute;left:0;right:0;top:215px;text-align:center;color:#fff;font-size:168px;font-weight:800;letter-spacing:-4px;line-height:1;text-shadow:0 4px 0 #0a2a4f,0 10px 30px rgba(6,23,48,.7)}
+.tag{position:absolute;left:0;right:0;top:420px;text-align:center;color:#fff;font-size:42px;font-weight:700;text-shadow:0 2px 12px #061730,0 0 4px #061730}
+.b{position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#061730;font-weight:800;
+border:5px solid rgba(255,255,255,.92);
+background:radial-gradient(circle at 50% 55%,#eef9ff 0,#eef9ff 45%,#7ec8ef 100%);
+box-shadow:0 14px 30px rgba(6,23,48,.45),inset 0 -14px 24px rgba(40,152,214,.35)}
+.b::before{content:"";position:absolute;top:7%;left:16%;width:68%;height:34%;border-radius:50%;background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0))}
+.b svg{width:44%;height:44%;position:relative}
+.b span{position:relative;font-size:30px}
+.sp{position:absolute}
+</style></head><body>
+<div class="rays"></div><div class="hill"></div>
+<h1>Clearday</h1>
+<div class="tag">Split bills. See tight weeks coming. Pop to pay.</div>
+
+<div class="b" style="left:150px;top:540px;width:190px;height:190px"><svg viewBox="0 0 24 24" fill="none" stroke="#0e3a6b" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9H3z"/><path d="M10 20v-6h4v6"/></svg><span>Rent</span></div>
+<div class="b" style="left:400px;top:575px;width:170px;height:170px"><svg viewBox="0 0 24 24" fill="none" stroke="#0e3a6b" stroke-width="2" stroke-linecap="round"><path d="M3 9a14 14 0 0118 0M6 12.5a9.500 9.500 0 0112 0M9 16a5 5 0 016 0"/><circle cx="12" cy="19" r="1" fill="#0e3a6b"/></svg><span style="font-size:26px">Internet</span></div>
+<div class="b" style="left:640px;top:545px;width:185px;height:185px"><svg viewBox="0 0 24 24" fill="none" stroke="#0e3a6b" stroke-width="2" stroke-linejoin="round"><path d="M12 3L3 19h18z"/><circle cx="11" cy="13" r="1.200" fill="#0e3a6b"/><circle cx="14" cy="16" r="1.200" fill="#0e3a6b"/></svg><span>Pizza</span></div>
+<div class="b" style="left:110px;top:90px;width:150px;height:150px"><svg viewBox="0 0 24 24" fill="none" stroke="#0e3a6b" stroke-width="2" stroke-linecap="round"><path d="M13 2L5 14h6l-1 8 8-12h-6z"/></svg><span style="font-size:24px">Electric</span></div>
+
+<!-- popping bubble -->
+<div class="b" style="left:930px;top:540px;width:170px;height:170px;opacity:.9"><svg viewBox="0 0 24 24" fill="none" stroke="#0e3a6b" stroke-width="2.500" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg><span style="font-size:26px">Paid!</span></div>
+<svg class="sp" style="left:880px;top:490px" width="270" height="270" viewBox="-135 -135 270 270">
+<g stroke="#fff" stroke-width="7" stroke-linecap="round">
+<path d="M0-105V-125M0 105V125M-105 0H-125M105 0H125M-74-74L-88-88M74-74L88-88M-74 74L-88 88M74 74L88 88"/></g>
+<g fill="#fff"><path d="M-118-100l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" transform="scale(.8)"/><path d="M110-95l5 14 14 5-14 5-5 14-5-14-14-5 14-5z"/><path d="M100 105l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/><circle cx="-120" cy="85" r="6"/><circle cx="125" cy="10" r="5"/></g></svg>
+<div class="b" style="left:930px;top:110px;width:120px;height:120px;opacity:.85"><span style="font-size:22px">Bills</span></div>
+</body></html>
