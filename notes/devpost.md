@@ -42,3 +42,9 @@ Next.js, TypeScript, Tailwind CSS, Framer Motion, Recharts, FastAPI, python-sock
 - [ ] Hardware: confirm Clearday Home (UNO Q, bulb, matrix, audio) works at the table; bring laptops, chargers, hotspot, power strip
 - [ ] Tables tab by 11:00 AM; a teammate at the table 12:00 to 1:30 PM
 - [ ] Publish the DEV build story afterward
+
+## System design visuals
+- docs/img/design/system-architecture.png
+- docs/img/design/hardware-today.png
+- docs/img/design/hardware-vision.png
+- docs/img/design/data-flow-pop.png

@@ -66,6 +66,15 @@ uv run pytest && uv run ruff check         # Python tests and lint
 
 `api/.env` holds the Nessie, ElevenLabs and model (Gemma, any OpenAI-compatible endpoint with tool calling) settings. Without a model endpoint the assistant falls back to a template; without ElevenLabs the announcement is text only.
 
+## System design
+
+![System architecture](docs/img/design/system-architecture.png)
+![Today's demo setup](docs/img/design/hardware-today.png)
+![Clearday Home, the final product](docs/img/design/hardware-vision.png)
+![Data flow of one pop](docs/img/design/data-flow-pop.png)
+
+Sources are in `docs/img/design/`; re-render with `uv run python docs/img/design/render.py`.
+
 ## Security and privacy
 
 - **Money is integer cents everywhere.** Leftover cents use the largest-remainder method with ties broken by user ID, and totals reconcile to the cent. Nessie's whole-dollar amounts are converted only at the Nessie client boundary. `scripts/check_money.sh` lints for float money in the pre-commit hook.
