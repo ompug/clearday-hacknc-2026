@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { api } from "@/lib/api";
 
-/** Sends the visitor to their sky if signed in, otherwise to the persona picker. */
+/**
+ * Sends the visitor to their sky if signed in, otherwise to the persona picker.
+ * Phone-width viewports go to the mobile app at /m.
+ */
 export default function Home() {
   const router = useRouter();
 
@@ -13,7 +16,9 @@ export default function Home() {
     api
       .me()
       .then((me) => {
-        if (!cancelled) router.replace(me ? "/sky" : "/login");
+        if (cancelled) return;
+        const base = window.matchMedia("(max-width: 640px)").matches ? "/m" : "";
+        router.replace(`${base}${me ? "/sky" : "/login"}`);
       })
       .catch(() => {
         if (!cancelled) router.replace("/login");

@@ -1,0 +1,117 @@
+/*
+ * Mobile (/m) chrome: Aero tab bar, press states and bottom sheets.
+ * Scoped to [data-mobile] so the desktop routes are untouched.
+ */
+
+/* Glossy Aero tab bar: white glass with a specular top half (common region for the four tabs). */
+[data-mobile] .m-tabbar-glass {
+  position: relative;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.92) 0%, rgb(232 244 252 / 0.9) 100%);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid rgb(255 255 255 / 0.95);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 -0.25rem 1.5rem rgb(6 23 48 / 0.3);
+}
+[data-mobile] .m-tabbar-glass::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px 50% 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0));
+  pointer-events: none;
+}
+[data-mobile] .m-tabbar-glass > * {
+  position: relative;
+}
+
+/* Current tab: glossy navy gel pill, white text (13:1). */
+[data-mobile] .m-tab-current {
+  color: #fff;
+  background: linear-gradient(180deg, #2a6aa8 0%, #0f3a68 50%, #0a2a4f 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
+    inset 0 -0.35rem 0.6rem rgb(6 23 48 / 0.35),
+    0 0.25rem 0.6rem rgb(6 23 48 / 0.35);
+}
+
+/* Glass title bar gets the same gel highlight. */
+[data-mobile] .m-topbar {
+  border-radius: 0 0 1.5rem 1.5rem;
+  border-top: 0;
+}
+
+/* Primary call to action: sparing red gel. */
+[data-mobile] .m-cta {
+  background: linear-gradient(180deg, #d8213f 0%, #b3132f 50%, #a20c24 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 0.4rem 1rem rgb(162 12 36 / 0.35);
+}
+
+[data-mobile] .m-tight-card {
+  border: 0.2rem solid var(--color-alert-600);
+}
+
+/* Haptic-feeling press: a quick squash, then a springy release. */
+[data-mobile] .m-press {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 180ms cubic-bezier(0.3, 1.6, 0.5, 1),
+    filter 120ms ease;
+}
+[data-mobile] .m-press:active:not(:disabled) {
+  transform: scale(0.94);
+  filter: brightness(0.96);
+  transition-duration: 60ms;
+}
+[data-mobile] .m-bubble:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+/* Bottom sheets: every modal <dialog> on /m (pay, new expense) docks to the bottom. */
+[data-mobile] dialog[open] {
+  inset: auto 0 0 0 !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: 30rem !important;
+  max-height: 92dvh !important;
+  border-radius: 1.75rem 1.75rem 0 0 !important;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: m-sheet-up 260ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+/* Grab handle so the sheet reads as a sheet. */
+[data-mobile] dialog[open]::before {
+  content: "";
+  display: block;
+  width: 2.75rem;
+  height: 0.35rem;
+  margin: 0.6rem auto 0;
+  border-radius: 9999px;
+  background: rgb(10 42 79 / 0.35);
+  position: relative;
+  inset: auto;
+}
+/* Thumb-sized controls inside sheets. */
+[data-mobile] dialog button,
+[data-mobile] dialog select,
+[data-mobile] dialog input:not([type="checkbox"]):not([type="radio"]) {
+  min-height: 2.75rem;
+}
+
+@keyframes m-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+html[data-reduce-motion="true"] [data-mobile] .m-press,
+html[data-reduce-motion="true"] [data-mobile] .m-press:active {
+  transform: none !important;
+  transition: none !important;
+}

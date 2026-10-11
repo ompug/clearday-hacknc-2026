@@ -17,6 +17,12 @@ Be honest when asked: the forecast, backtest and several analytics modules are s
 
 In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each. Judge Q&A still applies; the 2-minute video cut keeps beats 1, 2, 4 and 6.
 
+### Opening the mobile app (`/m`)
+
+- **Recorded video (recommended):** on the laptop, open `http://localhost:3001/m` in Chrome, press F12, toggle device emulation (Ctrl+Shift+M) and pick a 390x844 phone (e.g. iPhone 12 Pro). Use one normal window for Jake and one incognito window for Maya, so each has its own session cookie; Jake pops Rent and Maya's sky updates live. Persona login (`/api/dev/login`) only answers loopback requests, so this is the only way to sign in as a persona for the video.
+- **Real phone (same Wi-Fi):** browse to `http://<laptop-ip>:3001/m` (find the IP with `ip -4 addr` or `hostname -I`). Caveats: persona login is loopback-only, so a phone can't sign in as a persona; `web/.env.local` points the API at `http://localhost:8000`, which on a phone means the phone itself, so it would need `NEXT_PUBLIC_API_BASE_URL=http://<laptop-ip>:8000` plus `http://<laptop-ip>:3001` in the API's `web_origins`. Treat real phones as a stretch; emulation is what we record.
+- A narrow viewport (640 px or less) opening `/` is sent to `/m`; the desktop routes stay as they are.
+
 ## Judge Q&A prep
 
 Each judge gets 2 minutes of questions; keep answers to about 30 seconds and end on a concrete detail.
