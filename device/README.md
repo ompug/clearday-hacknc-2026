@@ -18,6 +18,15 @@ sketch/host_check/        Compiles the sketch on a laptop against mock headers
 tests/                    pytest, including an in-process fake Socket.IO/HTTP server
 ```
 
+## Quick start (demo: the laptop is the device)
+
+```bash
+bash scripts/dev.sh up        # API, web, DB
+bash scripts/dev.sh device    # issues a token into device/.env on first run, then runs the device (logs/device.log)
+```
+
+The fake bulb is used unless `HA_URL`, `HA_TOKEN` and `HA_LIGHT_ENTITY` are all set in `device/.env`, then it is `homeassistant`. No board needed: the matrix is log-only. Audio plays on the laptop speaker.
+
 ## Run it
 
 Off-board (laptop) with the fake bulb and logged matrix:

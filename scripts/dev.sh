@@ -9,6 +9,8 @@
 #   bash scripts/dev.sh status [--e2e]
 #   bash scripts/dev.sh migrate [--db local|tiger|e2e]   (default: DB_TARGET from api/.env)
 #   bash scripts/dev.sh e2e [args...]         run scripts/e2e_live_pop.py against the --e2e stack
+#   bash scripts/dev.sh device                run Clearday Home on this laptop (foreground, logs/device.log); issues a device
+#                                             token into device/.env on first run; BULB_DRIVER=homeassistant if HA_* are set
 #   bash scripts/dev.sh rehearse [args...]    pre-demo check: cold start, reset_demo, walk the demo script
 #
 # Normal stack: API :8000 (logs/api.log), web :3001 (logs/web.log), DB from api/.env (DB_TARGET).
@@ -241,7 +243,31 @@ status() {
   echo "  local db: $st"
 }
 
+device_run() {
+  local envf="$ROOT/device/.env"
+  touch "$envf"; chmod 600 "$envf" 2>/dev/null || true
+  curl -fsS -o /dev/null --max-time 3 "http://localhost:8000/api/health" || die "API not answering on :8000; run: bash scripts/dev.sh up"
+  if ! grep -q '^CLEARDAY_DEVICE_TOKEN=.\+' "$envf"; then
+    local line
+    line="$(uv run python -m scripts.issue_device_token --revoke-others 2>>"$LOGS/device-token.log" | grep '^CLEARDAY_DEVICE_TOKEN=')" \
+      || die "could not issue a device token (see logs/device-token.log)"
+    printf '%s\n' "$line" >>"$envf"
+    echo "device: issued a token into device/.env"
+  fi
+  # Each value in device/.env wins over nothing: only set defaults here when absent.
+  local get; get() { grep -m1 "^$1=" "$envf" | cut -d= -f2- | tr -d "\"'" || true; }
+  local driver=fake
+  if [ -n "$(get HA_URL)" ] && [ -n "$(get HA_TOKEN)" ] && [ -n "$(get HA_LIGHT_ENTITY)" ]; then driver=homeassistant; fi
+  echo "device: bulb=$driver, matrix=log (no board), API http://localhost:8000, logs/device.log"
+  cd "$ROOT/device"
+  export CLEARDAY_API_URL=http://localhost:8000 BULB_DRIVER="$driver" CLEARDAY_MATRIX=log CLEARDAY_LOG_DIR="$LOGS"
+  exec uv run python -m clearday_home
+}
+
 case "$cmd" in
+  device)
+    device_run
+    ;;
   up)
     [ "$tiger" -eq 1 ] && [ "$e2e" -eq 0 ] || db_up
     [ "$e2e" -eq 1 ] && use_e2e_db

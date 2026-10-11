@@ -1,19 +1,21 @@
 # Demo and Submission
 
-## 2-minute demo script
+## 3-minute demo script (mobile-first)
 
-The same script works for the video and each judge visit; the pop on both screens and the dome is the moment everything builds toward.
+Setup: the laptop runs the API, web and DB locally, plus Clearday Home (`bash scripts/dev.sh device`: EcoSmart bulb via Home Assistant, laptop speaker). Roommates use phones at `/m` on the same Wi-Fi. No Arduino/UNO Q today (deferred); a laptop screen shows the same sky as a backup.
 
 | Time | Show | Say |
 | --- | --- | --- |
-| 0:00 to 0:15 | Laptop A on the sky | "Roommates fight about money more than anything. Venmo made splitting social but public, and banks only show what you already spent. This is Clearday." |
-| 0:15 to 0:35 | Priya's sky: her rent bubble in storm colors; open her forecast | "Each bill is a bubble. Our Monte Carlo forecast, built on Capital One's Nessie data, says Priya's rent is [read the line under Rent on her forecast, e.g. "almost certain to dip below her cushion" or "about N in 10"]." (The app shows plain words, not a percentage: "About N in 10 chance of dipping below your cushion", "Less than 1 in 10", or "Almost certain". Read what it shows at demo time; don't memorize one. With the seeded data Priya's Rent reads "Almost certain".) |
-| 0:35 to 0:55 | Type "split last night's pizza with Jake and Priya" in Split with words, press Find it, check the shares, press Confirm split | "Gemma, Google's open model, finds the purchase through narrow, scoped tools; the server computes the split, I confirm, and Jake and Priya get a request bubble." |
-| 0:55 to 1:20 | Laptop B (Jake) pays; share fills on both screens | "Jake pays through a Nessie transfer, and his share fills live for everyone." |
-| 1:20 to 1:40 | Last share paid (Priya pops Rent after Jake); bubble pops on both laptops; dome glows and announces | "When rent is covered, it pops for the whole household, and Clearday Home tells the apartment, with an ElevenLabs voice, without ever saying anyone's balance." |
-| 1:40 to 2:00 | Feed, help panel, backtest number | "The feed celebrates without amounts, users at risk get private links to free NC legal aid, and our forecast landed within its range X% of the time in backtesting." (X is the percentage under "How the forecast has done" on the forecast page; it is 83% with the seeded data, and is labeled a preview while the stub is in place.) |
+| 0:00 to 0:20 | Three phones (Maya, Jake, Priya) on the sky at `/m` | "Roommates fight about money more than anything. Venmo made splitting social but public. This is Clearday: every bill is a bubble, and the whole apartment sees the same sky." |
+| 0:20 to 1:00 | Jake pops Rent on his phone; Maya's phone updates live; the bulb flashes and the laptop voice announces | "Jake pays his share through a Nessie transfer and pops the bubble. Everyone updates live, the bulb celebrates, and the ElevenLabs voice tells the apartment without saying anyone's balance." |
+| 1:00 to 1:40 | Priya's phone: tight-week forecast | "Our Monte Carlo forecast says Priya's rent is [read the line under Rent on her forecast; seeded data reads "Almost certain"]. It counts her share of household bills." |
+| 1:40 to 2:15 | Assistant: "split last night's pizza with Jake and Priya"; Find it, check shares, Confirm | "Gemma, Google's open model, finds the purchase through narrow, scoped tools. The server computes the split, I confirm, and they get a request bubble." |
+| 2:15 to 2:35 | Receipt scan on the phone | "Scan a receipt and the items become a split; the image is deleted after extraction." |
+| 2:35 to 3:00 | Show the hardware sketch/schematic, then toggle text size and reduced motion | "One household sharing its utilities, internet and subscriptions means fewer duplicate services and less waste; we don't measure that, it's just the nudge. Next is a custom Clearday Home PCB, schematic in progress, replacing today's laptop host. And accessibility is baseline: WCAG AA, list view, keyboard, reduced motion, transcripts." |
 
-In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each.
+Be honest when asked: the forecast, backtest and several analytics modules are stubs returning deterministic data (the ledger math is real); the model is Gemma, not Gemini; everything is hosted locally on the laptop; the Arduino UNO Q build is deferred.
+
+In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each. Judge Q&A still applies; the 2-minute video cut keeps beats 1, 2, 4 and 6.
 
 ## Judge Q&A prep
 
@@ -51,7 +53,7 @@ Devpost closes at 10:00 AM EST Sunday with no extensions; submit early and keep 
 - [ ] General track selected (or Beginner if more than half the team is new to hackathons)
 - [ ] Tracks opted in: Nessie, ElevenLabs, Tiger Data, Community, Commit
 - [ ] GitHub link to a public repo with a README (README.md written; confirm the repo is public)
-- [ ] Demo video 2 minutes or less
+- [ ] Demo video 2 minutes or less (cut from the 3-minute script)
 - [ ] Commit Fellowship supplemental form submitted
 
 **Judging day**

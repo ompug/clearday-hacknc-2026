@@ -37,6 +37,7 @@ Where docs disagree with each other, the Technical Spec's Analytics contracts wi
 - **Approved deps:** `socket.io-client` (web); Playwright (root uv dev group, for E2E scripts).
 - **`web/lib/api/types.ts`** is the contract for payloads the spec leaves undefined; API tests check against it.
 - **Model:** Gemma (Google's open model), not the Gemini API, through an OpenAI-compatible chat-completions endpoint with tool calling, configured only by `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY` in `api/.env`. The assistant falls back to templates when the model is slow, rate-limited or unset.
+- **Demo device host (Oct 11):** the laptop runs the Clearday Home device code (`bash scripts/dev.sh device`, bulb via Home Assistant, laptop speaker); the UNO Q is deferred. `HA_URL` points at wherever HA runs.
 - **Socket.IO auth (Phase 1):** session cookie for browsers, device token for devices; other connections are rejected.
 
 ## Repo layout
