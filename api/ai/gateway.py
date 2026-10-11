@@ -172,18 +172,30 @@ def _proposal_reply(handles: Handles, p: tools.Proposal) -> str:
 
 
 UNSAFE_REPLY = re.compile(
-    r"\d|[$€£<>]|https?:|www\.|\b\w+\.(?:com|net|org|io|app|co|xyz)\b|\w\.\w+/|\b(?:u|hh|acct|exp|sh|bill|txn|sub)_\w*",
+    r"[<>]|https?:|www\.|\b\w+\.(?:com|net|org|io|app|co|xyz)\b|\w\.\w+/|\b(?:u|hh|acct|exp|sh|bill|txn|sub)_\w*",
     re.IGNORECASE,
 )
+# A currency amount ("$36", "$1,200.50 USD", "12 dollars") is cut out of the text, never shown.
+AMOUNT = re.compile(
+    r"[$€£]\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:usd|dollars?|bucks))?|\b\d[\d,]*(?:\.\d+)?\s?(?:usd|dollars?|bucks)\b",
+    re.IGNORECASE,
+)
+# A small standalone count ("3 ways", "2 bills") is harmless; any other digit could be a hidden amount.
+SMALL_COUNT = re.compile(r"(?<![\w.,:/$%-])\d{1,2}(?![\w,:/%-]|\.\d)")
 
 
 def safe_reply(text: str) -> str | None:
     """The model's free text as plain, capped display text, or None to use the template instead.
 
-    Control characters are dropped. Any digit, currency sign, link, markup or raw app ID rejects the
-    whole reply: amounts and IDs come from the server only, never from the model's words."""
+    Control characters are dropped. Raw app IDs, links and markup reject the whole reply. Currency
+    amounts are removed (the UI shows amounts only from the server-side proposal). Small counts stay;
+    any other digit rejects the reply, because it could be an amount in disguise."""
     clean = " ".join("".join(" " if unicodedata.category(c)[0] in "CZ" else c for c in text).split())
     if not clean or UNSAFE_REPLY.search(clean):
+        return None
+    clean = " ".join(AMOUNT.sub(" ", clean).split())
+    clean = re.sub(r"\s+([,.;:!?])", r"\1", clean)
+    if re.search(r"[$€£]|\d", SMALL_COUNT.sub("", clean)) or not clean:
         return None
     return clean[:REPLY_MAX]
 

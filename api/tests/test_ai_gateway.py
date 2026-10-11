@@ -521,7 +521,8 @@ def test_source_purchase_must_be_a_household_members_and_match_the_total(client)
 @pytest.mark.parametrize(
     "text",
     [
-        "Total is $40.00 each",
+        "Total is 40.00 each",
+        "Rate is 12% now",
         "You owe 4000 cents",
         "Call 919-555-0100 now",
         "See https://evil.example/pay",
@@ -542,3 +543,30 @@ def test_safe_model_reply_is_plain_capped_text(client):
     reply = ask(client, "what's up", script=["Sure thing.\x07 " + "word " * 200]).json()
     assert reply["source"] == "model"
     assert len(reply["reply"]) <= gateway.REPLY_MAX and "\x07" not in reply["reply"]
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("There are 3 ways to split it.", "There are 3 ways to split it."),
+        (
+            "Rent of $1,200.50 USD is due soon, and 2 bills are open.",
+            "Rent of is due soon, and 2 bills are open.",
+        ),
+        ("Each pays $12 and Jake pays 12 dollars.", "Each pays and Jake pays."),
+    ],
+)
+def test_safe_reply_keeps_small_counts_and_removes_currency_amounts(text, expected):
+    assert gateway.safe_reply(text) == expected
+
+
+@pytest.mark.parametrize("text", ["It was 1999 ago", "Pay u_3 now", "go to www.x.test", "$ now"])
+def test_safe_reply_rejects_ids_links_and_stray_digits(text):
+    assert gateway.safe_reply(text) is None
+
+
+def test_model_free_text_with_a_currency_amount_stays_model_sourced_without_the_amount(client):
+    login(client, "Ana")
+    res = ask(client, "what's up", script=["You could split it 3 ways for $40.00 total."]).json()
+    assert res["source"] == "model"
+    assert "$" not in res["reply"] and "40" not in res["reply"] and "3 ways" in res["reply"]

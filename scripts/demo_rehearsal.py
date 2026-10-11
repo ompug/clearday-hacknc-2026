@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import os
 import re
 import sys
 import tempfile
@@ -168,6 +169,8 @@ def run(args: argparse.Namespace) -> None:
                 expect(shares).to_contain_text(who)
             how = proposal.get_by_text(re.compile(r"Found by Gemma|Quick match")).inner_text()
             how = "model" if "Gemma" in how else "template fallback"
+            if how != "model" and not os.environ.get("REHEARSAL_ALLOW_TEMPLATE"):
+                raise AssertionError("the pizza reply came from the template fallback, not the model")
             snap(maya, "04a-maya-proposal")
             proposal.get_by_role("button", name="Confirm split").click()
             jake_new = jake.get_by_role("button", name=re.compile(r"^Franklin Street Pizza"))
