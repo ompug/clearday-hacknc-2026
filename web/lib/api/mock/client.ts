@@ -363,6 +363,19 @@ export const mockApi: ApiClient = {
     }),
   getBacktest: async () =>
     delay({ coverage: 0.83, median_abs_error_cents: 4200, holdout_days: 30, is_preview: true }),
+  getAnalystSegments: async () =>
+    delay({
+      synthetic: true as const,
+      total_households: 200,
+      min_segment_size: 20,
+      segments: [
+        { segment: "early_career", label: "Early career", households: 70, share_at_risk: 0.3 },
+        { segment: "gig_worker", label: "Gig workers", households: 40, share_at_risk: 0.875 },
+        { segment: "retiree", label: "Retirees", households: 20, share_at_risk: 0.15 },
+        { segment: "student", label: "Students", households: 70, share_at_risk: 1 },
+      ],
+      note: "Invented households only. Share of households with better than even odds of a shortfall in the next 30 days. Used to offer support early, never for credit decisions.",
+    }),
   askAssistant: async ({ message }) => delay(mockAssistant(requireUser(), message)),
 };
 

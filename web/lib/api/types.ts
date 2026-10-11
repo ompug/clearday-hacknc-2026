@@ -467,3 +467,23 @@ export interface BacktestSummary {
   /** True while analytics.backtest is the stub: the number is a placeholder, say so. */
   is_preview: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Analyst view (GET /api/analyst/segments). Synthetic households only; the API hides segments under 20.
+// ---------------------------------------------------------------------------
+
+export interface AnalystSegment {
+  segment: string;
+  label: string;
+  households: number;
+  /** 0..1: share of households with better than even odds of a 30-day shortfall. */
+  share_at_risk: number;
+}
+
+export interface AnalystSegmentsResponse {
+  synthetic: true;
+  total_households: number;
+  min_segment_size: number;
+  segments: AnalystSegment[];
+  note: string;
+}

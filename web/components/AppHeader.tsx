@@ -1,8 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import type { Me } from "@/lib/api";
 import { DisplaySettings } from "./DisplaySettings";
 import { ClearMark } from "./icons";
+
+/** Secondary pages, in the order they were added. */
+const MORE_LINKS = [{ href: "/analyst", label: "Analyst view" }];
 
 export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => void }) {
   return (
@@ -32,6 +36,20 @@ export function AppHeader({ me, onSignOut }: { me: Me | null; onSignOut: () => v
           </button>
         </div>
       </div>
+      <nav aria-label="More from Clearday" className="mx-auto w-full max-w-6xl px-4 pb-3">
+        <ul className="flex flex-wrap gap-2">
+          {MORE_LINKS.map((l) => (
+            <li key={l.href}>
+              <Link
+                href={l.href}
+                className="inline-flex min-h-11 items-center rounded-full px-4 font-semibold text-white underline-offset-4 hover:bg-white/15 hover:underline"
+              >
+                {l.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </header>
   );
 }

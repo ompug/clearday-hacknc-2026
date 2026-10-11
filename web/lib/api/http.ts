@@ -2,6 +2,7 @@ import type { ApiClient } from "./client";
 import {
   ApiError,
   type AccountsResponse,
+  type AnalystSegmentsResponse,
   type AnnouncementResponse,
   type AssistantRequest,
   type AssistantResponse,
@@ -79,6 +80,7 @@ export const httpApi: ApiClient = {
   rememberPrices: async (req: PriceItemsRequest) => {
     await request("/api/prices/remember", { method: "POST", body: JSON.stringify(req) });
   },
+  getAnalystSegments: () => request<AnalystSegmentsResponse>("/api/analyst/segments"),
   getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),
   getAccounts: () => request<AccountsResponse>("/api/accounts"),

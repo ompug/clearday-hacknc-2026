@@ -16,6 +16,7 @@ from api.db import connect_async
 from api.migrate import discover
 from api.nessie.background import lifespan
 from api.realtime import sio
+from api.routes import analyst as analyst_routes
 from api.routes import assistant as assistant_routes
 from api.routes import expenses, payments, reads, session
 from api.routes import forecast as forecast_routes
@@ -49,6 +50,7 @@ fastapi_app.include_router(receipts_routes.router)
 fastapi_app.include_router(voice_routes.router)
 fastapi_app.include_router(insights_routes.router)
 fastapi_app.include_router(prices_routes.router)
+fastapi_app.include_router(analyst_routes.router)
 
 
 @fastapi_app.get("/api/health")

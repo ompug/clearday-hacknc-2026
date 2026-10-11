@@ -1,5 +1,6 @@
 import type {
   AccountsResponse,
+  AnalystSegmentsResponse,
   AssistantRequest,
   AnnouncementResponse,
   AssistantResponse,
@@ -51,6 +52,8 @@ export interface ApiClient {
   getAnomalies(): Promise<AnomaliesResponse>;
   getPriceTips(req: PriceItemsRequest): Promise<PriceTipsResponse>;
   rememberPrices(req: PriceItemsRequest): Promise<void>;
+  /** Segment hardship rates over synthetic households (never real users). */
+  getAnalystSegments(): Promise<AnalystSegmentsResponse>;
 }
 
 export type Unsubscribe = () => void;
