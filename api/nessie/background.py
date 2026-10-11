@@ -3,6 +3,9 @@
 Each run is `sync_accounts` (which first retries failed pop mirrors) on its own DB connection in a
 worker thread, so requests never wait on it. A failure is logged by exception class only: Nessie errors
 can carry URLs and response bodies, which must never reach the log. 0 disables the loop.
+
+The same lifespan also re-checks connected sockets every SOCKET_RECHECK_INTERVAL_S
+(`api.realtime.recheck_sockets`), so a logged-out, expired or departed session loses its socket.
 """
 
 from __future__ import annotations
@@ -55,14 +58,29 @@ async def sync_forever(interval_s: float) -> None:
         await asyncio.sleep(interval_s)
 
 
+async def recheck_sockets_forever(interval_s: float) -> None:
+    from api import realtime  # noqa: PLC0415 (read at call time so tests can swap it)
+
+    while True:
+        await asyncio.sleep(interval_s)
+        try:
+            await realtime.recheck_sockets()
+        except Exception as exc:  # never crash the loop
+            log.warning("socket re-check failed (%s)", type(exc).__name__)
+
+
 @asynccontextmanager
 async def lifespan(_app) -> AsyncIterator[None]:
-    interval = get_settings().nessie_sync_interval_s
-    task = asyncio.create_task(sync_forever(interval)) if interval > 0 else None
+    settings = get_settings()
+    tasks = []
+    if settings.nessie_sync_interval_s > 0:
+        tasks.append(asyncio.create_task(sync_forever(settings.nessie_sync_interval_s)))
+    if settings.socket_recheck_interval_s > 0:
+        tasks.append(asyncio.create_task(recheck_sockets_forever(settings.socket_recheck_interval_s)))
     try:
         yield
     finally:
-        if task is not None:
+        for task in tasks:
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await task

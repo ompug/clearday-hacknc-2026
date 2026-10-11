@@ -1,9 +1,10 @@
 """Signed session cookie (stdlib hmac) and the `current_user` dependency.
 
 Identity comes only from this cookie: handlers take `CurrentUser` from `current_user`, never a user or
-household ID from the body, query or model output. The cookie holds `<user_id>.<issued_unix>.<sig>`,
-where sig is HMAC-SHA256 over the first two parts with SESSION_SECRET. Every request also re-checks
-that the user is still a current household member.
+household ID from the body, query or model output. The cookie holds
+`<user_id>.<issued_unix>.<nonce>.<sig>`, where sig is HMAC-SHA256 over the first three parts with
+SESSION_SECRET and the random nonce makes every login a distinct session. Every request also re-checks
+that the session wasn't logged out (revoked_sessions) and that the user is still a household member.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import secrets
 import time
 from dataclasses import dataclass
 
@@ -48,18 +50,19 @@ def _sig(body: str) -> str:
 
 
 def sign(user_id: int, issued_at: int | None = None) -> str:
-    body = f"{user_id}.{int(time.time()) if issued_at is None else issued_at}"
+    nonce = secrets.token_hex(8)
+    body = f"{user_id}.{int(time.time()) if issued_at is None else issued_at}.{nonce}"
     return f"{body}.{_sig(body)}"
 
 
 def verify(token: str | None, now: int | None = None) -> int | None:
     """The user ID in a valid, unexpired token, else None."""
-    if not token or token.count(".") != 2:
+    if not token or len(token) > 200 or token.count(".") != 3:
         return None
-    user_part, issued_part, sig = token.split(".")
-    if not (user_part.isdigit() and issued_part.isdigit() and len(user_part) <= 18):
+    user_part, issued_part, nonce, sig = token.split(".")
+    if not (user_part.isdigit() and issued_part.isdigit() and len(user_part) <= 18 and nonce.isalnum()):
         return None
-    if not hmac.compare_digest(sig, _sig(f"{user_part}.{issued_part}")):
+    if not hmac.compare_digest(sig, _sig(f"{user_part}.{issued_part}.{nonce}")):
         return None
     age = (int(time.time()) if now is None else now) - int(issued_part)
     if not 0 <= age <= MAX_AGE_S:
@@ -99,9 +102,38 @@ def load_member(conn, user_id: int) -> CurrentUser | None:
     return CurrentUser(*row) if row else None
 
 
+def session_key(token: str) -> str:
+    """What revoked_sessions stores: the token's SHA-256, never the token."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def session_member(conn, token: str | None) -> CurrentUser | None:
+    """The member a session cookie signs in, or None if it's invalid, expired, logged out or the user
+    left the household."""
+    user_id = verify(token)
+    if user_id is None:
+        return None
+    if conn.execute("SELECT 1 FROM revoked_sessions WHERE token_hash = %s", (session_key(token),)).fetchone():
+        return None
+    return load_member(conn, user_id)
+
+
+def revoke_session(conn, token: str | None) -> bool:
+    """End a session server-side (logout). Returns False for a token that was never valid."""
+    user_id = verify(token)
+    if user_id is None:
+        return False
+    conn.execute(
+        """INSERT INTO revoked_sessions (token_hash, user_id) SELECT %s, id FROM users WHERE id = %s
+           ON CONFLICT (token_hash) DO NOTHING""",
+        (session_key(token), user_id),
+    )
+    conn.commit()
+    return True
+
+
 def current_user(request: Request, conn=Depends(get_conn)) -> CurrentUser:  # noqa: B008
-    user_id = verify(request.cookies.get(COOKIE_NAME))
-    user = load_member(conn, user_id) if user_id is not None else None
+    user = session_member(conn, request.cookies.get(COOKIE_NAME))
     if user is None:
         raise HTTPException(status_code=401, detail="Not signed in")
     return user

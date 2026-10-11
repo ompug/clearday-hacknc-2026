@@ -17,6 +17,7 @@ PHASE1_TABLES = {
     "nessie_cache",
     "devices",
     "feed_events",
+    "revoked_sessions",
     "schema_migrations",
 }
 

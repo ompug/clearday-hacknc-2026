@@ -38,3 +38,13 @@ def scratch_dsn(server_dsn: str):
 def no_background_sync(monkeypatch):
     """TestClient(app) runs the lifespan; keep the real Nessie sync off unless a test turns it on."""
     monkeypatch.setattr(get_settings(), "nessie_sync_interval_s", 0)
+
+
+@pytest.fixture(autouse=True)
+def testclient_counts_as_loopback(monkeypatch):
+    """Starlette's TestClient reports its peer as "testclient"; count it as this computer so login helpers
+    work. test_session_security checks real loopback and LAN addresses."""
+    from api.routes import session as session_routes  # noqa: PLC0415
+
+    real = session_routes.is_loopback
+    monkeypatch.setattr(session_routes, "is_loopback", lambda host: host == "testclient" or real(host))

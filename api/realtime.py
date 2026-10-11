@@ -3,7 +3,9 @@
 A browser connects with the session cookie (sent by socket.io-client `withCredentials`) and joins its
 household room and its private user room. Clearday Home connects with `auth={"token": ...}` and joins
 only the household's device room, which never receives names (no `feed.created`). Anything else is
-refused. Payloads never carry amounts.
+refused. Payloads never carry amounts. Logout disconnects that session's sockets, and
+`recheck_sockets` (run periodically by the API) drops any socket whose session or device token no
+longer resolves to the same rooms (logged out, expired, left the household, revoked).
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import socketio
 
 from api.config import get_settings
 from api.db import connect
-from api.session import COOKIE_NAME, load_member, verify
+from api.session import COOKIE_NAME, session_member
 
 log = logging.getLogger("clearday.realtime")
 
@@ -50,14 +52,14 @@ def hash_device_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def _cookie_user_id(environ: dict) -> int | None:
+def _cookie_token(environ: dict) -> str | None:
     jar = SimpleCookie()
     try:
         jar.load(environ.get("HTTP_COOKIE", ""))
     except Exception:  # malformed header: treat as no cookie
         return None
     morsel = jar.get(COOKIE_NAME)
-    return verify(morsel.value) if morsel else None
+    return morsel.value if morsel else None
 
 
 def resolve_rooms(environ: dict, auth: object, dsn: str | None = None) -> list[str] | None:
@@ -70,14 +72,27 @@ def resolve_rooms(environ: dict, auth: object, dsn: str | None = None) -> list[s
                 (hash_device_token(token),),
             ).fetchone()
             return [device_room(row[0])] if row else None
-        user_id = _cookie_user_id(environ)
-        user = load_member(conn, user_id) if user_id is not None else None
+        user = session_member(conn, _cookie_token(environ))
         if user is None:
             return None
         return [household_room(user.household_id), user_room(user.user_id)]
 
 
-async def _on_connect(sid, environ, auth=None):
+@dataclass(frozen=True)
+class _Credentials:
+    """What a socket connected with, kept so it can be re-checked and found again at logout."""
+
+    environ: dict
+    auth: object
+    rooms: tuple[str, ...]
+    cookie: str | None
+
+
+# sid -> credentials, for this process's connected sockets.
+_connected: dict[str, _Credentials] = {}
+
+
+async def on_connect(sid, environ, auth=None):
     try:
         rooms = await asyncio.to_thread(resolve_rooms, environ, auth)
     except Exception as exc:  # DB down or bad config: refuse rather than crash the handshake
@@ -85,11 +100,46 @@ async def _on_connect(sid, environ, auth=None):
         rooms = None
     if not rooms:
         raise socketio.exceptions.ConnectionRefusedError("unauthorized")
+    cookie_only = {"HTTP_COOKIE": environ.get("HTTP_COOKIE", "")}
+    token = None if isinstance(auth, dict) and auth.get("token") else _cookie_token(environ)
+    _connected[sid] = _Credentials(cookie_only, auth, tuple(rooms), token)
     for room in rooms:
         await sio.enter_room(sid, room)
 
 
-sio.on("connect", _on_connect)
+async def on_disconnect(sid, *_reason):
+    _connected.pop(sid, None)
+
+
+sio.on("connect", on_connect)
+sio.on("disconnect", on_disconnect)
+
+
+async def disconnect_session(cookie: str | None) -> int:
+    """Disconnect every socket that connected with this session cookie (logout)."""
+    sids = [sid for sid, c in list(_connected.items()) if cookie and c.cookie == cookie]
+    for sid in sids:
+        await sio.disconnect(sid)
+    return len(sids)
+
+
+def _stale(creds: list[tuple[str, _Credentials]], dsn: str | None) -> list[str]:
+    return [sid for sid, c in creds if tuple(resolve_rooms(c.environ, c.auth, dsn) or ()) != c.rooms]
+
+
+async def recheck_sockets(dsn: str | None = None) -> int:
+    """Disconnect sockets whose credentials no longer give the rooms they joined with."""
+    creds = list(_connected.items())
+    if not creds:
+        return 0
+    try:
+        stale = await asyncio.to_thread(_stale, creds, dsn)
+    except Exception as exc:  # DB down: keep sockets until the next check
+        log.warning("socket re-check failed (%s)", type(exc).__name__)
+        return 0
+    for sid in stale:
+        await sio.disconnect(sid)
+    return len(stale)
 
 
 async def emit_all(events: list[Emit]) -> None:

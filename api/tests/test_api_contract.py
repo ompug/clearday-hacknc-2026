@@ -233,10 +233,10 @@ def test_requires_session(client, path):
 def test_tampered_or_forged_cookie_is_rejected(client, path):
     login(client)
     good = client.cookies.get(COOKIE_NAME)
-    user_part, issued, sig = good.split(".")
+    user_part, issued, nonce, sig = good.split(".")
     other = client.ids["users"][1]
     client.cookies.clear()
-    client.cookies.set(COOKIE_NAME, f"{other}.{issued}.{sig}")
+    client.cookies.set(COOKIE_NAME, f"{other}.{issued}.{nonce}.{sig}")
     assert client.get(path).status_code == 401
     client.cookies.set(COOKIE_NAME, sign(int(user_part), issued_at=0))  # expired
     assert client.get(path).status_code == 401
