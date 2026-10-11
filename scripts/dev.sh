@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # The one way to run Clearday's dev servers. Usage:
-#   bash scripts/dev.sh up [--e2e] [--lan]    DB (podman-compose) + migrate + API + web, in the background
+#   bash scripts/dev.sh up [--e2e] [--lan] [--db local|tiger]   DB + migrate + API + web, in the background
+#                                             --db tiger: Tiger Cloud, no local container; --db local: the instant fallback
+#                                             (--db also works on restart, status and rehearse)
 #                                             --lan binds the API to 0.0.0.0 for Clearday Home (web stays on loopback)
 #   bash scripts/dev.sh down [--e2e] [--force-port]
 #   bash scripts/dev.sh restart [--e2e]
@@ -27,7 +29,16 @@ e2e=0; lan=0; force_port=0; db=""; passthru=()
 if [ "$cmd" = "e2e" ]; then
   e2e=1; passthru=("$@"); set --
 elif [ "$cmd" = "rehearse" ]; then
-  passthru=("$@"); set --  # the main stack (:8000/:3001), not the e2e one
+  # the main stack (:8000/:3001), not the e2e one; --db is ours, the rest goes to demo_rehearsal.py
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --db) [ $# -ge 2 ] || die "--db needs local or tiger"; db="$2"; shift ;;
+      --db=*) db="${1#--db=}" ;;
+      *) passthru+=("$1") ;;
+    esac
+    shift
+  done
+  set --
 fi
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -40,6 +51,17 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+case "$cmd" in
+  up|restart|status|rehearse)
+    case "$db" in
+      "") ;;
+      local|tiger) export DB_TARGET="$db" ;;
+      *) die "--db must be local or tiger for $cmd" ;;
+    esac ;;
+esac
+# Tiger Cloud: no local container needed. Local stays the instant fallback (--db local).
+[ "${DB_TARGET:-}" = "tiger" ] && tiger=1 || tiger=0
 
 if [ "$e2e" -eq 1 ]; then
   sfx="-e2e"; api_port="${CLEARDAY_API_PORT:-8001}"; web_port="${CLEARDAY_WEB_PORT:-3002}"
@@ -213,6 +235,7 @@ status() {
   else
     echo "  api health: no answer"
   fi
+  echo "  db target: ${DB_TARGET:-from api/.env}"
   local st
   st="$(podman inspect --format '{{.State.Health.Status}}' "$(basename "$ROOT")_db_1" 2>/dev/null || echo "not running")"
   echo "  local db: $st"
@@ -220,7 +243,7 @@ status() {
 
 case "$cmd" in
   up)
-    db_up
+    [ "$tiger" -eq 1 ] && [ "$e2e" -eq 0 ] || db_up
     [ "$e2e" -eq 1 ] && use_e2e_db
     uv run python -m api.migrate || die "migrations failed (see above); not starting the API"
     api_up
@@ -235,7 +258,7 @@ case "$cmd" in
     ;;
   restart)
     bash "$0" down ${sfx:+--e2e}
-    exec bash "$0" up ${sfx:+--e2e} $([ "$lan" -eq 1 ] && echo --lan)
+    exec bash "$0" up ${sfx:+--e2e} ${db:+--db "$db"} $([ "$lan" -eq 1 ] && echo --lan)
     ;;
   status)
     status
@@ -257,12 +280,12 @@ case "$cmd" in
   rehearse)
     # Pre-demo check: cold start (down, up), reset the demo data, then walk docs/06's beats in a browser.
     bash "$0" down || die "couldn't stop the stack"
-    bash "$0" up || die "couldn't start the stack"
+    bash "$0" up ${db:+--db "$db"} || die "couldn't start the stack"
     uv run python -m scripts.reset_demo || die "demo reset failed"
     uv run python scripts/demo_rehearsal.py --web "http://localhost:$web_port" "${passthru[@]}"
     ;;
   *)
-    sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
     [ -z "$cmd" ] || [ "$cmd" = help ] || [ "$cmd" = -h ] || exit 2
     ;;
 esac
