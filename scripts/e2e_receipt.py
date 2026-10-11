@@ -53,6 +53,7 @@ def main() -> int:
         dialog = page.get_by_role("dialog", name="New shared expense")
         dialog.get_by_label("By item").check()
         if args.manual:
+            dialog.get_by_label("What was it for?").fill("Pizza night")
             dialog.get_by_label("Item 1 name").fill("Pizza")
             dialog.get_by_label("Item 1 price in dollars").fill("18.50")
             dialog.get_by_label("Tax", exact=True).fill("1.50")
