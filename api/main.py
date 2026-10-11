@@ -18,6 +18,7 @@ from api.realtime import sio
 from api.routes import assistant as assistant_routes
 from api.routes import expenses, payments, reads, session
 from api.routes import forecast as forecast_routes
+from api.routes import insights as insights_routes
 from api.routes import voice as voice_routes
 
 log = logging.getLogger("clearday.api")
@@ -42,6 +43,7 @@ fastapi_app.include_router(expenses.router)
 fastapi_app.include_router(forecast_routes.router)
 fastapi_app.include_router(assistant_routes.router)
 fastapi_app.include_router(voice_routes.router)
+fastapi_app.include_router(insights_routes.router)
 
 
 @fastapi_app.get("/api/health")

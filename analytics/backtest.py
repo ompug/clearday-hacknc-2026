@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from analytics._common import median_int, records
 
+IS_STUB = True  # the API labels the number a preview while this is true; the real module omits it
+
 
 def run(transactions, scheduled, holdout_days=30, seed=0):
     txns = records(transactions)
