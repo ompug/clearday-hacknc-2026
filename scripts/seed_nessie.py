@@ -88,6 +88,9 @@ PEOPLE = [
     ),
 ]
 STATEMENT_DAY = 5
+# Planted case: Priya runs tight before rent. Our DB's opening balance (what the app and forecast read)
+# is lower than the Nessie account's; Nessie is never written for this.
+DB_OPENING_OVERRIDE_CENTS = {("priya", "checking"): 40_000}
 PAYER = "maya"  # pays the landlord and utilities; Jake and Priya owe shares
 ACCOUNTS = [
     ("checking", "Everyday Checking"),
@@ -539,7 +542,7 @@ def write_db(conn, client: NessieClient, plan: Plan, s: Seeded) -> dict:
                         acct["type"],
                         acct["nickname"],
                         acct["account_number"][-4:],
-                        acct["balance_cents"],
+                        DB_OPENING_OVERRIDE_CENTS.get((p.key, acct["type"]), acct["balance_cents"]),
                     ),
                 ).rowcount
 
