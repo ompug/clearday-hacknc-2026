@@ -7,6 +7,7 @@
 #   bash scripts/dev.sh status [--e2e]
 #   bash scripts/dev.sh migrate [--db local|tiger|e2e]   (default: DB_TARGET from api/.env)
 #   bash scripts/dev.sh e2e [args...]         run scripts/e2e_live_pop.py against the --e2e stack
+#   bash scripts/dev.sh rehearse [args...]    pre-demo check: cold start, reset_demo, walk the demo script
 #
 # Normal stack: API :8000 (logs/api.log), web :3001 (logs/web.log), DB from api/.env (DB_TARGET).
 # --e2e stack:  API :8001 (logs/api-e2e.log), web :3002 (logs/web-e2e.log), local DB clearday_e2e.
@@ -25,6 +26,8 @@ cmd="${1:-}"; [ $# -gt 0 ] && shift
 e2e=0; lan=0; force_port=0; db=""; passthru=()
 if [ "$cmd" = "e2e" ]; then
   e2e=1; passthru=("$@"); set --
+elif [ "$cmd" = "rehearse" ]; then
+  passthru=("$@"); set --  # the main stack (:8000/:3001), not the e2e one
 fi
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -251,8 +254,15 @@ case "$cmd" in
     use_e2e_db
     exec uv run python scripts/e2e_live_pop.py --web "http://localhost:$web_port" "${passthru[@]}"
     ;;
+  rehearse)
+    # Pre-demo check: cold start (down, up), reset the demo data, then walk docs/06's beats in a browser.
+    bash "$0" down || die "couldn't stop the stack"
+    bash "$0" up || die "couldn't start the stack"
+    uv run python -m scripts.reset_demo || die "demo reset failed"
+    uv run python scripts/demo_rehearsal.py --web "http://localhost:$web_port" "${passthru[@]}"
+    ;;
   *)
-    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
     [ -z "$cmd" ] || [ "$cmd" = help ] || [ "$cmd" = -h ] || exit 2
     ;;
 esac

@@ -7,11 +7,11 @@ The same script works for the video and each judge visit; the pop on both screen
 | Time | Show | Say |
 | --- | --- | --- |
 | 0:00 to 0:15 | Laptop A on the sky | "Roommates fight about money more than anything. Venmo made splitting social but public, and banks only show what you already spent. This is Clearday." |
-| 0:15 to 0:35 | Priya's sky: her rent bubble in storm colors; open her forecast | "Each bill is a bubble. Our Monte Carlo forecast, built on Capital One's Nessie data, says Priya has a [read the chance shown on her forecast]% chance of coming up short before rent." (Say the number the app shows at demo time; don't memorize one.) |
-| 0:35 to 0:55 | Type "split last night's pizza with Jake" | "Gemma, Google's open model, finds the purchase through narrow, scoped tools; the server computes the split, I confirm, and Jake gets a request bubble." |
+| 0:15 to 0:35 | Priya's sky: her rent bubble in storm colors; open her forecast | "Each bill is a bubble. Our Monte Carlo forecast, built on Capital One's Nessie data, says Priya's rent is [read the line under Rent on her forecast, e.g. "almost certain to dip below her cushion" or "about N in 10"]." (The app shows plain words, not a percentage: "About N in 10 chance of dipping below your cushion", "Less than 1 in 10", or "Almost certain". Read what it shows at demo time; don't memorize one. With the seeded data Priya's Rent reads "Almost certain".) |
+| 0:35 to 0:55 | Type "split last night's pizza with Jake and Priya" in Split with words, press Find it, check the shares, press Confirm split | "Gemma, Google's open model, finds the purchase through narrow, scoped tools; the server computes the split, I confirm, and Jake and Priya get a request bubble." |
 | 0:55 to 1:20 | Laptop B (Jake) pays; share fills on both screens | "Jake pays through a Nessie transfer, and his share fills live for everyone." |
-| 1:20 to 1:40 | Last share paid; bubble pops on both laptops; dome glows and announces | "When rent is covered, it pops for the whole household, and Clearday Home tells the apartment, with an ElevenLabs voice, without ever saying anyone's balance." |
-| 1:40 to 2:00 | Feed, help panel, backtest number | "The feed celebrates without amounts, users at risk get private links to free NC legal aid, and our forecast landed within its range X% of the time in backtesting." |
+| 1:20 to 1:40 | Last share paid (Priya pops Rent after Jake); bubble pops on both laptops; dome glows and announces | "When rent is covered, it pops for the whole household, and Clearday Home tells the apartment, with an ElevenLabs voice, without ever saying anyone's balance." |
+| 1:40 to 2:00 | Feed, help panel, backtest number | "The feed celebrates without amounts, users at risk get private links to free NC legal aid, and our forecast landed within its range X% of the time in backtesting." (X is the percentage under "How the forecast has done" on the forecast page; it is 83% with the seeded data, and is labeled a preview while the stub is in place.) |
 
 In the video, show the Nessie, ElevenLabs, and Tiger Data names on screen at least once each.
 
