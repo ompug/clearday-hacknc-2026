@@ -278,8 +278,8 @@ def main(argv: list[str] | None = None) -> int:
     print(_line(f"DB {verb}", result.db))
     if result.nessie_left:
         print(
-            f"Note: Nessie still holds {result.nessie_left} pop mirror records. Run without --db-only "
-            "once online, before the API syncs, or a sync will import them again."
+            f"Note: Nessie still holds {result.nessie_left} pop mirror records (sync ignores them). "
+            "Run without --db-only once online to clean them up."
         )
     return 0
 

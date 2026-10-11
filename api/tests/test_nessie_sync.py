@@ -117,3 +117,49 @@ def test_balance_is_opening_plus_mirrored_transactions(db, world):
     sync_accounts(db, client)
     # 100000 + 120000 - 4200 - 1000 (pending purchase) - 30000 - 12637 (posted bill); pending bill ignored
     assert account_balances_cents(db, user_id) == {account_id: 172_163}
+
+
+def test_sync_skips_clearday_mirror_records_no_payment_owns(db, world):
+    """A "Clearday:" transfer or deposit with no payment row (e.g. after reset_demo --db-only) is our
+    own mirror, not real activity: importing it would move balances by whole dollars."""
+    _, client, user_id, _, nessie_acct = world
+    sync_accounts(db, client)
+    before = txns(db)
+    balance = account_balances_cents(db, user_id)
+    client.create_transfer(nessie_acct, 3_300, "2026-10-10", "completed", "Clearday: Rent share")
+    client.create_deposit(nessie_acct, 3_300, "2026-10-10", "completed", "Clearday: Rent share")
+    stats = sync_accounts(db, client)
+    assert stats.inserted == 0
+    assert txns(db) == before
+    assert stats.orphan_mirrors == 2
+    assert account_balances_cents(db, user_id) == balance
+
+
+def test_sync_removes_previously_imported_orphan_mirrors(db, world):
+    _, client, _, _, nessie_acct = world
+    sync_accounts(db, client)
+    before = txns(db)
+    orphan = client.create_transfer(nessie_acct, 3_300, "2026-10-10", "completed", "Clearday: Rent share")
+    # Simulate the old behaviour: the orphan was imported before the guard existed.
+    db.execute(
+        """INSERT INTO transactions (user_id, account_id, nessie_id, kind, amount_cents, merchant, category,
+               status, occurred_at)
+           SELECT user_id, id, %s, 'transfer', 3300, 'Clearday: Rent share', 'transfer', 'posted',
+                  '2026-10-10 12:00Z' FROM accounts""",
+        (orphan["id"],),
+    )
+    db.commit()
+    stats = sync_accounts(db, client)
+    assert stats.removed == 1
+    assert txns(db) == before
+
+
+def test_sync_never_reposts_a_pending_bill_nessie_marks_completed(db, world):
+    """reset_demo --db-only reopens a popped bill in our DB while Nessie still says completed. Only a
+    payment row may post a bill; without one, our pending status stands."""
+    fake, client, *_ = world
+    sync_accounts(db, client)
+    pending = next(b for b in fake.children["bills"].values() if b["status"] == "pending")
+    client.set_bill_status(pending["_id"], "completed")
+    sync_accounts(db, client)
+    assert ("bill", 9_900, "Duke Energy", "bills", "pending", "2026-10-15") in txns(db)

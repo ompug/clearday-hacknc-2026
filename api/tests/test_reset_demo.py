@@ -149,3 +149,34 @@ def test_dry_run_and_db_only(seeded):
     online = reset_demo.reset(conn, client, plan=seeded["plan"])
     assert online.nessie == {"transfers deleted": 1, "deposits deleted": 1}
     assert snapshot(conn) == before_db
+
+
+def test_sync_after_db_only_reset_keeps_the_seeded_state(seeded):
+    """After --db-only, Nessie still holds the "Clearday:" mirrors and the completed bill. A sync must
+    not import those mirrors or re-post the reopened bill, so the reset sticks."""
+    from api.nessie.sync import sync_accounts  # noqa: PLC0415
+
+    conn, client = seeded["conn"], seeded["client"]
+    sync_accounts(conn, client)
+    conn.commit()
+    before_db = snapshot(conn)
+    jake = conn.execute("SELECT id FROM users WHERE display_name = 'Jake'").fetchone()[0]
+    rent, share = conn.execute(
+        """SELECT e.id, s.amount_cents FROM expenses e JOIN shares s ON s.expense_id = e.id
+           WHERE e.label = 'Rent' AND s.user_id = %s""",
+        (jake,),
+    ).fetchone()
+    _pop(conn, client, jake, ids.encode(ids.EXPENSE, rent), share, "dbonly-sync-rent-01")
+    phone, phone_cents = conn.execute(
+        "SELECT id, amount_cents FROM transactions"
+        " WHERE user_id = %s AND kind = 'bill' AND status = 'pending'",
+        (jake,),
+    ).fetchone()
+    _pop(conn, client, jake, ids.encode(ids.BILL, phone), phone_cents, "dbonly-sync-phone-1")
+
+    reset_demo.reset(conn, None, plan=seeded["plan"])
+    assert snapshot(conn) == before_db
+    stats = sync_accounts(conn, client)
+    conn.commit()
+    assert stats.orphan_mirrors == 2
+    assert snapshot(conn) == before_db

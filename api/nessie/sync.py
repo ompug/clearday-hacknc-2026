@@ -15,6 +15,9 @@ from api.nessie.client import NessieClient
 
 log = logging.getLogger("clearday.nessie.sync")
 
+# Every transfer and deposit pop-to-pay writes to Nessie starts with this (api.payments.mirror_description).
+MIRROR_PREFIX = "Clearday:"
+
 # Nessie status -> ours. None means "don't mirror" (cancelled).
 _STATUS = {"completed": "posted", "pending": "pending", "recurring": "pending", "cancelled": None}
 
@@ -26,6 +29,7 @@ class SyncStats:
     updated: int = 0
     unchanged: int = 0
     removed: int = 0
+    orphan_mirrors: int = 0  # "Clearday:" records no payment row owns; never imported
     skipped: list[str] = field(default_factory=list)  # Nessie ids we couldn't read
 
     @property
@@ -86,10 +90,20 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
             stats.accounts += 1
             seen = []
             for nessie_id, kind, cents, merchant, category, status, when in rows:
-                seen.append(nessie_id)
                 if nessie_id in owned:  # the ledger holds exact cents and status for these
+                    seen.append(nessie_id)
                     stats.unchanged += 1
                     continue
+                if kind in ("transfer", "deposit") and (merchant or "").startswith(MIRROR_PREFIX):
+                    # Our own mirror whose payment row is gone (reset --db-only, or a crash before
+                    # it was linked): not real activity. Left out of `seen`, so an imported copy goes.
+                    stats.orphan_mirrors += 1
+                    continue
+                seen.append(nessie_id)
+                if kind == "bill" and status == "posted" and _is_pending_bill(conn, nessie_id):
+                    # Only a payment row posts a bill. Nessie says completed but no payment owns it
+                    # (e.g. reset --db-only reopened it), so our pending status stands.
+                    status = "pending"
                 moved = conn.execute(
                     "DELETE FROM transactions WHERE nessie_id = %s AND occurred_at <> %s", (nessie_id, when)
                 ).rowcount
@@ -125,4 +139,14 @@ def sync_accounts(conn, client: NessieClient) -> SyncStats:
             ).rowcount
     if stats.skipped:
         log.warning("Nessie sync skipped %d unreadable records", len(stats.skipped))
+    if stats.orphan_mirrors:
+        log.info("Nessie sync ignored %d Clearday mirror records with no payment row", stats.orphan_mirrors)
     return stats
+
+
+def _is_pending_bill(conn, nessie_id: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM transactions WHERE nessie_id = %s AND kind = 'bill' AND status = 'pending'",
+        (nessie_id,),
+    ).fetchone()
+    return row is not None
