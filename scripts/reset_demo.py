@@ -31,15 +31,7 @@ import httpx
 import psycopg
 
 from api.nessie.client import NessieClient, NessieError
-from scripts.seed_nessie import (
-    ACCOUNTS,
-    DB_OPENING_OVERRIDE_CENTS,
-    HOUSEHOLD,
-    PEOPLE,
-    Plan,
-    _first_by,
-    build_plan,
-)
+from scripts.seed_nessie import ACCOUNTS, HOUSEHOLD, PEOPLE, Plan, _first_by, build_plan
 
 MIRROR_PREFIX = "Clearday:"  # api.payments.mirror_description
 _DB_STATUS = {"completed": "posted", "pending": "pending", "recurring": "pending"}  # as api.nessie.sync
@@ -285,13 +277,6 @@ def reset_db(conn, hh: Household, plan: Plan) -> Counter:
         (hh.id,),
     ).rowcount
     counts["price memory reseeded"] = reseed_price_memory(conn, hh)
-    for (person, kind), cents in DB_OPENING_OVERRIDE_CENTS.items():  # planted tight week (DB side only)
-        if person in hh.users:
-            counts["planted openings"] += conn.execute(
-                """UPDATE accounts SET opening_balance_cents = %s
-                   WHERE user_id = %s AND type = %s AND opening_balance_cents <> %s""",
-                (cents, hh.users[person], kind, cents),
-            ).rowcount
     return counts
 
 
