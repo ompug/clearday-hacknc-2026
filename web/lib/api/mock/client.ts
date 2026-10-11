@@ -346,6 +346,19 @@ export const mockApi: ApiClient = {
         },
       ],
     }),
+  getAnomalies: async () =>
+    delay({
+      anomalies: [
+        {
+          anomaly_id: "txn_218",
+          merchant: "Harris Teeter",
+          date: "2026-09-30",
+          amount_cents: 21800,
+          typical_low_cents: 3200,
+          typical_high_cents: 6400,
+        },
+      ],
+    }),
   getBacktest: async () =>
     delay({ coverage: 0.83, median_abs_error_cents: 4200, holdout_days: 30, is_preview: true }),
   askAssistant: async ({ message }) => delay(mockAssistant(requireUser(), message)),

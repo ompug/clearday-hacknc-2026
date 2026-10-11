@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from api import insights
+from api import anomalies, insights
 from api.db import get_conn
 from api.session import CurrentUser, current_user
 
@@ -19,3 +19,8 @@ def get_duplicate_subscriptions(user: CurrentUser = Depends(current_user), conn=
 @router.get("/api/insights/backtest")
 def get_backtest(user: CurrentUser = Depends(current_user), conn=Depends(get_conn)) -> dict:  # noqa: B008
     return insights.backtest_summary(conn, user)
+
+
+@router.get("/api/insights/anomalies")
+def get_anomalies(user: CurrentUser = Depends(current_user), conn=Depends(get_conn)) -> dict:  # noqa: B008
+    return {"anomalies": anomalies.cards(conn, user)}

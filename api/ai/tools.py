@@ -261,8 +261,16 @@ def explain_forecast(ctx: Context, args: dict) -> tuple[dict, list[str], int]:
 
 
 def explain_anomaly(ctx: Context, args: dict) -> tuple[dict, list[str], int]:
-    _str(args.get("anomaly_handle"), 40)
-    raise ToolRejected("unknown_handle")  # no anomaly handles are issued in this build
+    try:
+        a = ctx.handles.anomaly(_str(args.get("anomaly_handle"), 40))
+    except HandleError as exc:
+        raise ToolRejected(exc.reason) from exc
+    out = {
+        "merchant": untrusted(a.merchant, "Purchase"),
+        "amount_cents": a.amount_cents,
+        "typical_range_cents": [a.typical_low_cents, a.typical_high_cents],
+    }
+    return out, ["merchant", "amount_cents", "typical_range_cents"], 1
 
 
 def read_receipt(ctx: Context, args: dict) -> tuple[dict, list[str], int]:

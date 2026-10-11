@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { api, type BacktestSummary, type DuplicateSubscription } from "@/lib/api";
+import {
+  api,
+  type BacktestSummary,
+  type DuplicateSubscription,
+  type UnusualCharge,
+} from "@/lib/api";
 import { formatCents } from "@/lib/money";
 
 function joinNames(names: string[]): string {
@@ -14,15 +19,21 @@ export function InsightsSection() {
   const uid = useId();
   const [duplicates, setDuplicates] = useState<DuplicateSubscription[] | null>(null);
   const [backtest, setBacktest] = useState<BacktestSummary | null>(null);
+  const [unusual, setUnusual] = useState<UnusualCharge[]>([]);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api.getDuplicateSubscriptions(), api.getBacktest()])
-      .then(([d, b]) => {
+    Promise.all([
+      api.getDuplicateSubscriptions(),
+      api.getBacktest(),
+      api.getAnomalies().catch(() => ({ anomalies: [] as UnusualCharge[] })),
+    ])
+      .then(([d, b, a]) => {
         if (cancelled) return;
         setDuplicates(d.duplicates);
         setBacktest(b);
+        setUnusual(a.anomalies);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -55,6 +66,38 @@ export function InsightsSection() {
                   {joinNames(d.members.map((m) => m.display_name))} each pay for it, together{" "}
                   {formatCents(d.monthly_cost_cents)} a month. Sharing one plan could free up{" "}
                   <strong>{formatCents(d.possible_savings_cents)}</strong> a month.
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section
+        aria-labelledby={`${uid}-odd`}
+        className="glass rounded-[1.75rem] p-5 sm:p-6 lg:col-span-2"
+      >
+        <h2 id={`${uid}-odd`} className="text-xl font-bold text-navy-950">
+          Charges that look unusual
+        </h2>
+        {unusual.length === 0 ? (
+          <p className="mt-2 text-navy-800">
+            Nothing stands out compared with your usual spending.
+          </p>
+        ) : (
+          <ul className="mt-3 flex flex-col gap-2">
+            {unusual.map((a) => (
+              <li
+                key={a.anomaly_id}
+                className="rounded-2xl border border-white bg-white/85 px-4 py-3 shadow-sm"
+              >
+                <p className="font-bold break-words text-navy-950">
+                  {a.merchant} on {a.date}: {formatCents(a.amount_cents)}
+                </p>
+                <p className="text-sm text-navy-800">
+                  You usually spend {formatCents(a.typical_low_cents)} to{" "}
+                  {formatCents(a.typical_high_cents)} there. If you don&rsquo;t recognize this
+                  charge, check it with your bank.
                 </p>
               </li>
             ))}

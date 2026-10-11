@@ -401,6 +401,23 @@ export interface DuplicateSubscriptionsResponse {
   duplicates: DuplicateSubscription[];
 }
 
+export interface UnusualCharge {
+  /** Opaque ID of the charge ("txn_<n>"). */
+  anomaly_id: string;
+  /** Untrusted text; render as text only. */
+  merchant: string;
+  /** YYYY-MM-DD */
+  date: string;
+  amount_cents: Cents;
+  typical_low_cents: Cents;
+  typical_high_cents: Cents;
+}
+
+/** GET /api/insights/anomalies: the signed-in user's own unusual charges only. */
+export interface AnomaliesResponse {
+  anomalies: UnusualCharge[];
+}
+
 export interface BacktestSummary {
   /** Share of held-out days whose actual balance fell inside the P10 to P90 band, 0 to 1. */
   coverage: number;

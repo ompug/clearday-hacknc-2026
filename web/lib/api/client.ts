@@ -4,6 +4,7 @@ import type {
   AnnouncementResponse,
   AssistantResponse,
   CreateExpenseRequest,
+  AnomaliesResponse,
   BacktestSummary,
   CreateExpenseResult,
   DuplicateSubscriptionsResponse,
@@ -45,6 +46,7 @@ export interface ApiClient {
   readReceipt(file: File): Promise<ReceiptReadResult>;
   getDuplicateSubscriptions(): Promise<DuplicateSubscriptionsResponse>;
   getBacktest(): Promise<BacktestSummary>;
+  getAnomalies(): Promise<AnomaliesResponse>;
 }
 
 export type Unsubscribe = () => void;

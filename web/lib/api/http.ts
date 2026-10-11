@@ -5,6 +5,7 @@ import {
   type AnnouncementResponse,
   type AssistantRequest,
   type AssistantResponse,
+  type AnomaliesResponse,
   type BacktestSummary,
   type CreateExpenseRequest,
   type DuplicateSubscriptionsResponse,
@@ -71,6 +72,7 @@ export const httpApi: ApiClient = {
   getDuplicateSubscriptions: () =>
     request<DuplicateSubscriptionsResponse>("/api/insights/subscriptions"),
   getBacktest: () => request<BacktestSummary>("/api/insights/backtest"),
+  getAnomalies: () => request<AnomaliesResponse>("/api/insights/anomalies"),
   getSky: () => request<SkyResponse>("/api/sky"),
   getAccounts: () => request<AccountsResponse>("/api/accounts"),
   pay: (body: PaymentRequest) =>

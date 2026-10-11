@@ -9,6 +9,7 @@ ACCOUNT = "acct"
 EXPENSE = "exp"
 SHARE = "sh"
 BILL = "bill"  # a personal bill; the number is its transactions.id
+TRANSACTION = "txn"  # an unusual charge; the number is its transactions.id
 SUBSCRIPTION = "sub"  # a predicted recurring charge; the number is its latest transactions.id
 
 

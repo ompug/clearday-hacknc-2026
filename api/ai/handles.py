@@ -12,6 +12,8 @@ import re
 import string
 from dataclasses import dataclass, field
 
+from api.anomalies import Anomaly
+
 ME = "You"
 RAW_ID = re.compile(r"^(?:[a-z]{1,5}_\d+|\d+|[0-9a-f]{20,})$", re.IGNORECASE)
 
@@ -38,6 +40,7 @@ class Handles:
     me_name: str
     others: dict[str, tuple[int, str]] = field(default_factory=dict)  # "Person A" -> (user_id, real name)
     purchases: dict[str, Purchase] = field(default_factory=dict)
+    anomalies: dict[str, Anomaly] = field(default_factory=dict)  # "anomaly_1" -> an unusual charge
 
     @classmethod
     def for_household(cls, me_id: int, members: list[tuple[int, str]]) -> Handles:
@@ -75,6 +78,14 @@ class Handles:
     def purchase(self, handle: object) -> Purchase:
         if isinstance(handle, str) and handle in self.purchases:
             return self.purchases[handle]
+        raise HandleError(self._why(handle))
+
+    def add_anomalies(self, found: list[Anomaly]) -> None:
+        self.anomalies = {f"anomaly_{i}": a for i, a in enumerate(found, 1)}
+
+    def anomaly(self, handle: object) -> Anomaly:
+        if isinstance(handle, str) and handle in self.anomalies:
+            return self.anomalies[handle]
         raise HandleError(self._why(handle))
 
     def _why(self, value: object) -> str:
